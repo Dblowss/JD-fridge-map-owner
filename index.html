@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
 <meta charset="utf-8">
-<title>京东自营冰箱 · 三品牌产品地图 v8</title>
+<title>京东自营冰箱——海美容产品地图</title>
 <style>
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; margin: 18px; background:#f5f6f8; color:#222; }
   h1 { font-size: 22px; margin: 0 0 4px; display:inline-block; }
@@ -53,10 +53,15 @@
   /* --- 编辑模式 --- */
   .card-remove { display:none; position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:50%; background:#e53e3e; color:white;
                   font-size:14px; line-height:18px; text-align:center; cursor:pointer; z-index:3; border:2px solid white; font-weight:700; user-select:none; }
+  .card-edit { display:none; position:absolute; bottom:-6px; right:-6px; width:20px; height:20px; border-radius:50%; background:#3182ce; color:white;
+                font-size:11px; line-height:18px; text-align:center; cursor:pointer; z-index:3; border:2px solid white; font-weight:700; user-select:none; }
+  .card-edit:before { content:"✎"; }
   body.edit-mode .card-remove { display:block; }
+  body.edit-mode .card-edit { display:block; }
   body.edit-mode .card:hover { box-shadow: 0 0 0 2px #3182ce; }
   body.edit-mode .thumb { pointer-events:none; }  /* 编辑模式下禁用图片跳转 */
   body.edit-mode .name { pointer-events:none; }
+  .card.edited { outline: 1.5px dashed #3182ce; outline-offset:-1px; }
   .card.hidden { display:none; }
   body.show-hidden .card.hidden { display:flex !important; opacity:0.5; outline:2px dashed #e53e3e; }
   body.show-hidden .card.hidden .card-remove { background:#38a169; }
@@ -77,7 +82,7 @@
 </style>
 </head>
 <body>
-  <h1>京东自营冰箱 · 三品牌产品地图 v8</h1>
+  <h1>京东自营冰箱——海美容产品地图</h1>
   <div class="toolbar">
     <button id="btn-edit">✎ 编辑模式</button>
     <button id="btn-add" style="display:none">＋ 新增</button>
@@ -85,7 +90,6 @@
     <button id="btn-reset" style="display:none">重置</button>
     <span class="hidden-count" id="hidden-count"></span>
   </div>
-  <div class="sub">共 143 款(美的74 · 海尔41 · 容声28)· 全部 tab 按品牌 × 价格布局</div>
   <div class="legend"><span class="lgd" style="background:#fdecea;border-left:3px solid #e74c3c"><b style="color:#e74c3c">美的</b> · 74款</span> <span class="lgd" style="background:#eaf3fa;border-left:3px solid #3498db"><b style="color:#3498db">海尔</b> · 41款</span> <span class="lgd" style="background:#e6f7ec;border-left:3px solid #27ae60"><b style="color:#27ae60">容声</b> · 28款</span></div>
   <div class="tabs"><button class="tab active" data-target="all">全部 (143)</button><button class="tab" data-target="法式">🇫🇷 法式 (50)</button><button class="tab" data-target="十字">✚ 十字 (45)</button><button class="tab" data-target="对开">⇔ 对开 (12)</button><button class="tab" data-target="小冰箱">▫ 小冰箱 (36)</button></div>
   <section class="panel active" id="panel-all"><div class="panel-hint">全部 143 款(美的74 · 海尔41 · 容声28),纵轴=品牌 · 横轴=价格</div><div class="panel-scroll"><table><thead><tr><th></th><th class="price-head"><1k</th><th class="price-head">1k-2k</th><th class="price-head">2k-3k</th><th class="price-head">3k-4k</th><th class="price-head">4k-5k</th><th class="price-head">5k-6k</th><th class="price-head">6k-7k</th><th class="price-head">7k-8k</th><th class="price-head">8k+</th></tr></thead><tbody><tr><th class="brand-head" style="background:#fdecea;color:#e74c3c">美的<br><span class="cnt">74款</span></th><td>
@@ -3553,13 +3557,48 @@
     </div>
   </div>
 
+  <!-- 编辑卡片弹窗 -->
+  <div class="modal-bg" id="edit-modal">
+    <div class="modal">
+      <h3>编辑卡片 <span style="color:#888;font-size:11px;font-weight:normal" id="edit-sku"></span></h3>
+      <label>型号名</label>
+      <input id="edit-name">
+      <label>价格 (数字)</label>
+      <input id="edit-price" type="number" step="0.01">
+      <label>容积 (数字 L)</label>
+      <input id="edit-liters" type="number">
+      <label>系列 (留空则不显示)</label>
+      <input id="edit-series">
+      <label>门体 (改后自动换到对应 tab)</label>
+      <select id="edit-door">
+        <option value="">(不改)</option>
+        <option value="法式">法式</option>
+        <option value="十字">十字</option>
+        <option value="对开">对开</option>
+        <option value="小冰箱">小冰箱</option>
+      </select>
+      <label>卖点 (每行一条,留空清空全部)</label>
+      <textarea id="edit-feats" rows="6"></textarea>
+      <div class="btns">
+        <button id="edit-revert" style="margin-right:auto;color:#e53e3e">还原原始</button>
+        <button id="edit-cancel">取消</button>
+        <button id="edit-ok" class="primary">保存</button>
+      </div>
+    </div>
+  </div>
+
 <script>
   const STORAGE_KEY = 'v8_edit_state';
-  const state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"hidden":[],"custom":[]}');
+  const state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"hidden":[],"custom":[],"edits":{}}');
+  if (!state.edits) state.edits = {};  // backward compat for older saved state
   function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
   function updateCount() {
     const c = state.hidden.length;
-    document.getElementById('hidden-count').textContent = c ? `已隐藏 ${c} 张` : '';
+    const e = Object.keys(state.edits).length;
+    const parts = [];
+    if (c) parts.push(`已隐藏 ${c} 张`);
+    if (e) parts.push(`已修改 ${e} 张`);
+    document.getElementById('hidden-count').textContent = parts.join(' · ');
   }
 
   // Apply hidden state to existing cards
@@ -3568,7 +3607,178 @@
       const sku = c.dataset.sku;
       c.classList.toggle('hidden', state.hidden.includes(sku));
     });
+    recountAll();
     updateCount();
+  }
+
+  // ---- edits: per-SKU field overrides ----
+  // Snapshot each card's original HTML the first time we see it, so we can revert.
+  const originalHTML = new Map();  // sku -> outerHTML
+  function snapshotCard(card) {
+    const sku = card.dataset.sku;
+    if (!originalHTML.has(sku)) originalHTML.set(sku, card.innerHTML);
+  }
+  function applyEditToCard(card) {
+    const sku = card.dataset.sku;
+    const ed = state.edits[sku];
+    // always start from original
+    if (originalHTML.has(sku)) card.innerHTML = originalHTML.get(sku);
+    // re-attach action buttons after innerHTML reset
+    attachActionButtons(card);
+    if (!ed) { card.classList.remove('edited'); return; }
+    card.classList.add('edited');
+    if (ed.name != null) {
+      const nameEl = card.querySelector('.name');
+      if (nameEl) nameEl.textContent = ed.name;
+    }
+    if (ed.price != null) {
+      const priceEl = card.querySelector('.tag.price');
+      if (priceEl) priceEl.textContent = ed.price ? '¥' + Number(ed.price).toFixed(0) : 'N/A';
+    }
+    if (ed.liters != null) {
+      const literEl = card.querySelector('.tag.liter');
+      if (literEl) literEl.textContent = (ed.liters || '?') + 'L';
+    }
+    if (ed.series != null) {
+      let seriesEl = card.querySelector('.tag.series-tag');
+      const lineEl = card.querySelector('.line');
+      if (ed.series) {
+        if (!seriesEl && lineEl) {
+          seriesEl = document.createElement('span');
+          seriesEl.className = 'tag series-tag';
+          lineEl.appendChild(seriesEl);
+        }
+        if (seriesEl) seriesEl.textContent = ed.series;
+      } else if (seriesEl) {
+        seriesEl.remove();
+      }
+    }
+    if (ed.features != null) {
+      const feats = card.querySelector('.feats');
+      if (feats) feats.innerHTML = ed.features.map(f => `<li>${escapeHTML(f)}</li>`).join('');
+    }
+  }
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  const DOORS = ['法式','十字','对开','小冰箱'];
+  function detectDoor(sku) {
+    // Which door-panel does this SKU appear in? (only one built-in door panel per SKU)
+    for (const d of DOORS) {
+      const panel = document.getElementById('panel-' + d);
+      if (panel && panel.querySelector(`.card:not([data-moved-out])[data-sku="${CSS.escape(sku)}"]`)) return d;
+    }
+    return '';
+  }
+  function priceBucket(P) {
+    if (!P) return null;
+    if (P<1000) return "<1k"; if (P<2000) return "1k-2k"; if (P<3000) return "2k-3k";
+    if (P<4000) return "3k-4k"; if (P<5000) return "4k-5k"; if (P<6000) return "5k-6k";
+    if (P<7000) return "6k-7k"; if (P<8000) return "7k-8k"; return "8k+";
+  }
+  function moveCardToDoor(sku, newDoor) {
+    // 1) hide the card in whichever door panel it originally lives (mark moved-out)
+    for (const d of DOORS) {
+      const panel = document.getElementById('panel-' + d);
+      if (!panel) continue;
+      panel.querySelectorAll(`.card[data-sku="${CSS.escape(sku)}"]`).forEach(c => {
+        // remove clone markers first
+        if (c.dataset.movedClone) { c.remove(); return; }
+        if (d !== newDoor) {
+          c.dataset.movedOut = '1';
+          c.style.display = 'none';
+        } else {
+          delete c.dataset.movedOut;
+          c.style.display = '';
+        }
+      });
+    }
+    // 2) if new door panel does NOT already have this SKU, clone the panel-all card into it
+    const targetPanel = document.getElementById('panel-' + newDoor);
+    if (!targetPanel) return;
+    if (targetPanel.querySelector(`.card:not([data-moved-out])[data-sku="${CSS.escape(sku)}"]`)) return;
+    const allCard = document.querySelector(`#panel-all .card[data-sku="${CSS.escape(sku)}"]`);
+    if (!allCard) return;
+    // locate td by brand row + price col
+    const brand = allCard.dataset.brand;
+    const priceStr = (allCard.querySelector('.tag.price')?.textContent || '').replace(/[^\d.]/g, '');
+    const pb = priceBucket(parseFloat(priceStr));
+    if (!pb) return;
+    const headers = targetPanel.querySelectorAll('thead th.price-head');
+    let colIdx = -1;
+    headers.forEach((h, i) => { if (h.textContent.trim() === pb) colIdx = i; });
+    if (colIdx < 0) return;
+    let targetRow = null;
+    targetPanel.querySelectorAll('tbody tr').forEach(row => {
+      const th = row.querySelector('th.brand-head');
+      if (th && th.textContent.trim().startsWith(brand)) targetRow = row;
+    });
+    if (!targetRow) return;
+    const td = targetRow.querySelectorAll('td')[colIdx];
+    if (!td) return;
+    const clone = allCard.cloneNode(true);
+    clone.dataset.movedClone = '1';
+    // strip original click bindings by re-attaching action buttons
+    attachActionButtons(clone);
+    const empty = td.querySelector('.empty');
+    if (empty) empty.remove();
+    td.appendChild(clone);
+  }
+  function applyDoorMoves() {
+    // Called on load: for each edited SKU with a door override, migrate.
+    Object.entries(state.edits).forEach(([sku, ed]) => {
+      if (ed && ed.door) moveCardToDoor(sku, ed.door);
+    });
+  }
+  function applyEdits() {
+    document.querySelectorAll('.card:not([data-custom])').forEach(applyEditToCard);
+    applyDoorMoves();
+    recountAll();
+    updateCount();
+  }
+
+  // ---- Live recount for tab buttons + panel hints + brand-head cnt ----
+  function isCardVisible(card) {
+    // count if not hidden by user + not moved-out to another door
+    return !card.classList.contains('hidden') && !card.dataset.movedOut;
+  }
+  function recountAll() {
+    // Per panel: count visible cards, break down by brand
+    const brandNames = ["美的","海尔","容声"];
+    document.querySelectorAll('.panel').forEach(panel => {
+      const cards = Array.from(panel.querySelectorAll('.card')).filter(isCardVisible);
+      const total = cards.length;
+      const byBrand = {};
+      brandNames.forEach(b => byBrand[b] = cards.filter(c => c.dataset.brand === b).length);
+      // brand-head cnt
+      panel.querySelectorAll('tbody tr').forEach(row => {
+        const th = row.querySelector('th.brand-head');
+        if (!th) return;
+        const cnt = th.querySelector('.cnt');
+        if (!cnt) return;
+        const brand = brandNames.find(b => th.textContent.trim().startsWith(b));
+        if (brand) cnt.textContent = (byBrand[brand] || 0) + '款';
+      });
+      // panel-hint
+      const hint = panel.querySelector('.panel-hint');
+      if (hint) {
+        const panelId = panel.id.replace('panel-','');
+        if (panelId === 'all') {
+          hint.innerHTML = `全部 ${total} 款(美的${byBrand["美的"]} · 海尔${byBrand["海尔"]} · 容声${byBrand["容声"]}),纵轴=品牌 · 横轴=价格`;
+        } else {
+          hint.innerHTML = `<b>${panelId}</b> · 共 ${total} 款(美的${byBrand["美的"]} · 海尔${byBrand["海尔"]} · 容声${byBrand["容声"]})· 纵轴=品牌 · 横轴=价格`;
+        }
+      }
+    });
+    // tab button counts
+    document.querySelectorAll('.tab').forEach(btn => {
+      const target = btn.dataset.target;
+      const panelId = target === 'all' ? 'panel-all' : 'panel-' + target;
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      const n = Array.from(panel.querySelectorAll('.card')).filter(isCardVisible).length;
+      btn.textContent = btn.textContent.replace(/\(\d+\)$/, `(${n})`);
+    });
   }
 
   // Render custom cards from state
@@ -3638,14 +3848,18 @@
       if (empty) empty.remove();
       td.appendChild(card);
     });
+    recountAll();
   }
 
-  // Attach remove buttons to all built-in cards
-  document.querySelectorAll('.card').forEach(c => {
-    const btn = document.createElement('div');
-    btn.className = 'card-remove';
-    btn.title = '隐藏此卡片';
-    btn.addEventListener('click', e => {
+  // Attach action buttons (remove + edit) to a built-in card.
+  // Safe to call multiple times — removes existing buttons first.
+  function attachActionButtons(c) {
+    c.querySelectorAll(':scope > .card-remove, :scope > .card-edit').forEach(el => el.remove());
+
+    const btnRm = document.createElement('div');
+    btnRm.className = 'card-remove';
+    btnRm.title = '隐藏此卡片';
+    btnRm.addEventListener('click', e => {
       e.stopPropagation();
       const sku = c.dataset.sku;
       const idx = state.hidden.indexOf(sku);
@@ -3653,7 +3867,22 @@
       else state.hidden.push(sku);
       save(); applyHidden();
     });
-    c.appendChild(btn);
+    c.appendChild(btnRm);
+
+    const btnEd = document.createElement('div');
+    btnEd.className = 'card-edit';
+    btnEd.title = '编辑此卡片信息';
+    btnEd.addEventListener('click', e => {
+      e.stopPropagation();
+      openEditModal(c);
+    });
+    c.appendChild(btnEd);
+  }
+  // Attach action buttons to all built-in cards + snapshot originals
+  document.querySelectorAll('.card').forEach(c => {
+    if (c.dataset.custom) return;
+    snapshotCard(c);
+    attachActionButtons(c);
   });
 
   // Tabs
@@ -3686,9 +3915,92 @@
     btnShow.textContent = on ? '👁 隐藏已删除' : '👁 显示已隐藏';
   });
   btnReset.addEventListener('click', () => {
-    if (!confirm('确定要清空所有隐藏 / 自定义卡片状态吗?')) return;
-    state.hidden = []; state.custom = []; save();
-    applyHidden(); renderCustomCards();
+    if (!confirm('确定要清空所有 隐藏 / 自定义卡片 / 卡片修改 吗?')) return;
+    state.hidden = []; state.custom = []; state.edits = {}; save();
+    // Wipe all door-move artifacts by full reload — simplest reliable revert.
+    location.reload();
+  });
+
+  // ---- Edit-modal wiring ----
+  const editModal = document.getElementById('edit-modal');
+  let editingSku = null;
+  function readOriginalFields(card) {
+    return {
+      name: (card.querySelector('.name')?.textContent || '').trim(),
+      price: (() => {
+        const t = (card.querySelector('.tag.price')?.textContent || '').replace(/[^\d.]/g, '');
+        return t ? parseFloat(t) : null;
+      })(),
+      liters: (() => {
+        const t = (card.querySelector('.tag.liter')?.textContent || '').replace(/[^\d]/g, '');
+        return t ? parseInt(t) : null;
+      })(),
+      series: (card.querySelector('.tag.series-tag')?.textContent || '').trim(),
+      features: Array.from(card.querySelectorAll('.feats li')).map(li => li.textContent.trim()).filter(Boolean),
+    };
+  }
+  function openEditModal(card) {
+    editingSku = card.dataset.sku;
+    // Read whatever's currently shown (already respects existing edits)
+    const cur = readOriginalFields(card);
+    const curDoor = (state.edits[editingSku]?.door) || detectDoor(editingSku);
+    document.getElementById('edit-sku').textContent = 'SKU: ' + editingSku + (curDoor ? ' · 当前门体: ' + curDoor : '');
+    document.getElementById('edit-name').value = cur.name;
+    document.getElementById('edit-price').value = cur.price ?? '';
+    document.getElementById('edit-liters').value = cur.liters ?? '';
+    document.getElementById('edit-series').value = cur.series;
+    document.getElementById('edit-door').value = curDoor || '';
+    document.getElementById('edit-feats').value = cur.features.join('\n');
+    editModal.classList.add('open');
+  }
+  document.getElementById('edit-cancel').addEventListener('click', () => {
+    editModal.classList.remove('open'); editingSku = null;
+  });
+  document.getElementById('edit-revert').addEventListener('click', () => {
+    if (!editingSku) return;
+    if (!confirm('还原此卡片为服务器原始数据(丢弃本地修改)?')) return;
+    const hadDoor = state.edits[editingSku]?.door;
+    delete state.edits[editingSku];
+    save();
+    // revert text fields on all copies of this card
+    document.querySelectorAll(`.card[data-sku="${CSS.escape(editingSku)}"]`).forEach(applyEditToCard);
+    // revert door move: remove clone, un-hide original
+    if (hadDoor) {
+      DOORS.forEach(d => {
+        const panel = document.getElementById('panel-' + d);
+        if (!panel) return;
+        panel.querySelectorAll(`.card[data-sku="${CSS.escape(editingSku)}"]`).forEach(c => {
+          if (c.dataset.movedClone) c.remove();
+          if (c.dataset.movedOut) { delete c.dataset.movedOut; c.style.display = ''; }
+        });
+      });
+    }
+    recountAll();
+    updateCount();
+    editModal.classList.remove('open'); editingSku = null;
+  });
+  document.getElementById('edit-ok').addEventListener('click', () => {
+    if (!editingSku) return;
+    const priceStr = document.getElementById('edit-price').value.trim();
+    const litersStr = document.getElementById('edit-liters').value.trim();
+    const featsStr = document.getElementById('edit-feats').value;
+    const doorVal = document.getElementById('edit-door').value;
+    const ed = {
+      name: document.getElementById('edit-name').value.trim(),
+      price: priceStr ? parseFloat(priceStr) : null,
+      liters: litersStr ? parseInt(litersStr) : null,
+      series: document.getElementById('edit-series').value.trim(),
+      door: doorVal || '',
+      features: featsStr.split('\n').map(x => x.trim()).filter(Boolean),
+    };
+    state.edits[editingSku] = ed;
+    save();
+    // Apply text-field edits to ALL cards with this SKU (panel-all + door-panel clone)
+    document.querySelectorAll(`.card[data-sku="${CSS.escape(editingSku)}"]`).forEach(applyEditToCard);
+    if (doorVal) moveCardToDoor(editingSku, doorVal);
+    recountAll();
+    updateCount();
+    editModal.classList.remove('open'); editingSku = null;
   });
 
   // Add modal
@@ -3718,6 +4030,7 @@
   // Init
   applyHidden();
   renderCustomCards();
+  applyEdits();
 </script>
 </body>
 </html>
