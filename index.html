@@ -175,6 +175,7 @@
   <h1>京东自营冰箱——海美容产品地图</h1>
   <div class="toolbar">
     <button id="btn-edit">✎ 编辑模式</button>
+    <button id="btn-discard" style="display:none;color:#e53e3e">✗ 放弃本次修改</button>
     <button id="btn-add" style="display:none">＋ 新增</button>
     <button id="btn-show-hidden" style="display:none">👁 显示已隐藏</button>
     <button id="btn-reset" style="display:none">重置</button>
@@ -5787,17 +5788,43 @@
 
   // Edit mode toggle
   const btnEdit = document.getElementById('btn-edit');
+  const btnDiscard = document.getElementById('btn-discard');
   const btnAdd = document.getElementById('btn-add');
   const btnShow = document.getElementById('btn-show-hidden');
   const btnReset = document.getElementById('btn-reset');
+  let stateSnapshot = null;  // 进入编辑模式时的快照
+
   btnEdit.addEventListener('click', () => {
     const on = !document.body.classList.contains('edit-mode');
+    if (on) {
+      // 进入编辑模式:快照当前 state
+      stateSnapshot = JSON.stringify(state);
+    } else {
+      // 点"✓ 保存" 退出:快照清空(改动已经通过 save() 实时写了)
+      stateSnapshot = null;
+    }
     document.body.classList.toggle('edit-mode', on);
     btnEdit.classList.toggle('active', on);
-    btnEdit.textContent = on ? '✓ 完成编辑' : '✎ 编辑模式';
+    btnEdit.textContent = on ? '✓ 保存退出' : '✎ 编辑模式';
+    btnDiscard.style.display = on ? 'inline-block' : 'none';
     btnAdd.style.display = on ? 'inline-block' : 'none';
     btnShow.style.display = on ? 'inline-block' : 'none';
     btnReset.style.display = on ? 'inline-block' : 'none';
+  });
+
+  btnDiscard.addEventListener('click', () => {
+    if (!stateSnapshot) return;
+    if (!confirm('放弃本次编辑模式中的所有修改(隐藏/编辑/新增)?')) return;
+    // 恢复快照
+    const restored = JSON.parse(stateSnapshot);
+    state.hidden = restored.hidden || [];
+    state.custom = restored.custom || [];
+    state.edits = restored.edits || {};
+    state.doorOrder = restored.doorOrder || {};
+    state.myTabs = restored.myTabs || [];
+    save();
+    stateSnapshot = null;
+    location.reload();
   });
   btnShow.addEventListener('click', () => {
     const on = !document.body.classList.contains('show-hidden');
