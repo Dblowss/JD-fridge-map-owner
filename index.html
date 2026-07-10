@@ -139,6 +139,11 @@
   .panel.my-panel .card.dragging { opacity:0.4; cursor:grabbing; }
   .panel.my-panel td.drop-over { background:#fff4ec !important; outline:2px dashed #e8531f; outline-offset:-2px; }
   .panel.my-panel .card-remove { display:block; background:#e53e3e; }
+
+  /* 门体 tab 拖拽 */
+  .panel:not(#panel-all) .card[draggable="true"] { cursor:grab; }
+  .panel:not(#panel-all) .card.dragging { opacity:0.4; cursor:grabbing; }
+  .panel:not(#panel-all) td.drop-over { background:#fff4ec !important; outline:2px dashed #e8531f; outline-offset:-2px; }
   .panel.my-panel .card-remove:before { content:"×"; }
 
   /* SKU 选择弹窗 */
@@ -5802,7 +5807,7 @@
   });
   btnReset.addEventListener('click', () => {
     if (!confirm('确定要清空所有 隐藏 / 自定义卡片 / 卡片修改 吗?')) return;
-    state.hidden = []; state.custom = []; state.edits = {}; save();
+    state.hidden = []; state.custom = []; state.edits = {}; state.doorOrder = {}; state.myTabs = []; save();
     // Wipe all door-move artifacts by full reload — simplest reliable revert.
     location.reload();
   });
@@ -5996,16 +6001,17 @@
       const lastPanel = document.querySelector('.panel:last-of-type');
       lastPanel.parentNode.insertBefore(panel, lastPanel.nextSibling);
     }
-    // 决定列:只显示"当前 tab 里 SKU 覆盖到的"价格段
+    // 决定列:尊重 item.bucket override(跨列拖拽后),否则用原始价格归列
+    // 始终显示全部 9 列(空的也能 drop)
     const bucketMap = {};
     MY_PRICE_ORDER.forEach(pb => bucketMap[pb] = []);
     tab.skus.forEach(item => {
       const info = SKU_INDEX[item.sku_id];
       if (!info) return;
-      const pb = priceBucketMy(info.price);
-      if (pb) bucketMap[pb].push({...info, order: item.order});
+      const pb = item.bucket || priceBucketMy(info.price);
+      if (pb) bucketMap[pb].push({...info, order: item.order, sku_id: item.sku_id});
     });
-    const activeCols = MY_PRICE_ORDER.filter(pb => bucketMap[pb].length > 0);
+    const activeCols = MY_PRICE_ORDER;  // 始终全列,让用户能拖到空列
     // 排序:如果 order 有值(用户手拖过)按 order,否则按 salesAmt 降序
     activeCols.forEach(pb => {
       bucketMap[pb].sort((a,b) => {
@@ -6120,39 +6126,39 @@
       td.classList.remove('drop-over');
       const data = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
       if (!data.sku) return;
-      // 找 drop 目标之前的兄弟卡片,决定 order
+      const targetBucket = td.dataset.bucket;  // 跨列时取目标列的 bucket
+      const tab = state.myTabs.find(t => t.id === tabId);
+      if (!tab) return;
+      // 确保 SKU 在 tab 里(可能从 picker 外拖来的不存在)
+      let rec = tab.skus.find(s => s.sku_id === data.sku);
+      if (!rec) {
+        rec = {sku_id: data.sku, order: null, bucket: null};
+        tab.skus.push(rec);
+      }
+      // 更新 bucket override(跨列拖拽核心)
+      rec.bucket = targetBucket;
+      // 找 drop 位置:遍历目标 td 里现有卡片,找第一个 midpoint 大于 y 的插入之前
       const cards = Array.from(td.querySelectorAll('.card'));
-      const rect = td.getBoundingClientRect();
       const y = e.clientY;
-      // 找到应插入的位置(第一个 midpoint 大于 y 的卡片之前)
       let insertBefore = null;
       for (const c of cards) {
         if (c.dataset.sku === data.sku) continue;
         const cr = c.getBoundingClientRect();
         if (y < cr.top + cr.height / 2) { insertBefore = c; break; }
       }
-      const tab = state.myTabs.find(t => t.id === tabId);
-      if (!tab) return;
-      // 移除旧的 sku 记录(如果原本在这个 tab)
-      const existing = tab.skus.find(s => s.sku_id === data.sku);
-      if (!existing) {
-        tab.skus.push({sku_id: data.sku, order: null});
-      }
-      // 计算新 order:根据 insertBefore 的 sku 找它当前 order,插到之前
+      // 重算这个 bucket 里的 order
       const bucketOrder = cards.filter(c => c.dataset.sku !== data.sku).map(c => c.dataset.sku);
       const insertBeforeSku = insertBefore ? insertBefore.dataset.sku : null;
       const finalOrder = insertBeforeSku
         ? bucketOrder.indexOf(insertBeforeSku)
         : bucketOrder.length;
-      // 简单实现:重算 bucket 内所有 SKU 的 order = 0,1,2,... 保存
-      // 先构建新顺序
       const newOrderList = [];
       bucketOrder.slice(0, finalOrder).forEach(s => newOrderList.push(s));
       newOrderList.push(data.sku);
       bucketOrder.slice(finalOrder).forEach(s => newOrderList.push(s));
       newOrderList.forEach((sku, i) => {
-        const rec = tab.skus.find(x => x.sku_id === sku);
-        if (rec) rec.order = i + 1;  // 1-based,避免和 null 混淆
+        const r = tab.skus.find(x => x.sku_id === sku);
+        if (r) r.order = i + 1;
       });
       save();
       renderMyPanel(tab);
@@ -6284,10 +6290,113 @@
   state.myTabs.forEach(t => renderMyPanel(t));
   renderMyTabButtons();
 
+  // ============= 门体 tab 拖拽 =============
+  // 让法式/十字/对开/小冰箱 tab 里的卡片可以拖拽调序(同列内 + 跨列)
+  // 拖拽后的顺序存 state.doorOrder = {"panel-法式_tdIndex": ["sku1","sku2",...]}
+  if (!state.doorOrder) state.doorOrder = {};
+
+  function initDoorTabDrag() {
+    const doorPanelIds = ['panel-法式','panel-十字','panel-对开','panel-小冰箱'];
+    doorPanelIds.forEach(panelId => {
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      // 给每个 td 标记 index
+      const tds = panel.querySelectorAll('tbody td');
+      tds.forEach((td, idx) => {
+        td.dataset.doorPanel = panelId;
+        td.dataset.tdIdx = idx;
+        // drop target
+        td.addEventListener('dragover', e => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          td.classList.add('drop-over');
+        });
+        td.addEventListener('dragleave', () => td.classList.remove('drop-over'));
+        td.addEventListener('drop', e => {
+          e.preventDefault();
+          td.classList.remove('drop-over');
+          const sku = e.dataTransfer.getData('text/plain');
+          if (!sku) return;
+          // 找到被拖的卡片 DOM
+          const draggedCard = panel.querySelector(`.card[data-sku="${sku}"]`);
+          if (!draggedCard) return;
+          // 决定插入位置
+          const cards = Array.from(td.querySelectorAll('.card'));
+          const y = e.clientY;
+          let insertBefore = null;
+          for (const c of cards) {
+            if (c.dataset.sku === sku) continue;
+            const cr = c.getBoundingClientRect();
+            if (y < cr.top + cr.height / 2) { insertBefore = c; break; }
+          }
+          // DOM 移动(从原位置到新 td)
+          const empty = td.querySelector('.empty');
+          if (empty) empty.remove();
+          if (insertBefore) {
+            td.insertBefore(draggedCard, insertBefore);
+          } else {
+            td.appendChild(draggedCard);
+          }
+          // 记录新顺序到 state.doorOrder
+          saveDoorOrder(panelId);
+        });
+      });
+      // 给所有卡片加 draggable
+      panel.querySelectorAll('.card').forEach(card => {
+        card.setAttribute('draggable', 'true');
+        card.addEventListener('dragstart', e => {
+          card.classList.add('dragging');
+          e.dataTransfer.setData('text/plain', card.dataset.sku);
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        card.addEventListener('dragend', () => card.classList.remove('dragging'));
+      });
+    });
+    // 恢复已保存的排序
+    applyDoorOrder();
+  }
+
+  function saveDoorOrder(panelId) {
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+    const tds = panel.querySelectorAll('tbody td');
+    tds.forEach((td, idx) => {
+      const key = panelId + '_' + idx;
+      const skus = Array.from(td.querySelectorAll('.card')).map(c => c.dataset.sku);
+      if (skus.length > 0) {
+        state.doorOrder[key] = skus;
+      } else {
+        delete state.doorOrder[key];
+      }
+    });
+    save();
+  }
+
+  function applyDoorOrder() {
+    if (!state.doorOrder || Object.keys(state.doorOrder).length === 0) return;
+    Object.entries(state.doorOrder).forEach(([key, skus]) => {
+      const parts = key.split('_');
+      const tdIdx = parseInt(parts.pop());
+      const panelId = parts.join('_');
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      const tds = panel.querySelectorAll('tbody td');
+      const td = tds[tdIdx];
+      if (!td) return;
+      // 按 state 里的顺序重排当前 td 里的 cards
+      // 先收集当前 panel 里所有 card(可能跨列移过来的)
+      skus.forEach(sku => {
+        const card = panel.querySelector(`.card[data-sku="${sku}"]`);
+        if (card) td.appendChild(card);  // appendChild 会自动把它从原位置移走
+      });
+    });
+  }
+
   // Init
   applyHidden();
   renderCustomCards();
   applyEdits();
+  initDoorTabDrag();
 </script>
 </body>
 </html>
