@@ -112,6 +112,58 @@
     line-height:1.25;
     letter-spacing: 0.1px;
   }
+
+  /* --- 自定义 tab (我的选型) --- */
+  .tab.tab-my { background:#fff4ec; color:#e8531f; border:1px dashed #f0a97c; border-bottom-color:transparent; }
+  .tab.tab-my.active { background:#fff; color:#111; border-color:#e8531f; border-bottom-color:#fff; }
+  .tab-add {
+    padding:6px 14px; font-size:13px; border:1px dashed #cfd6de; background:#fff;
+    color:#666; cursor:pointer; border-radius:6px 6px 0 0; margin-bottom:-2px; font-weight:500;
+  }
+  .tab-add:hover { background:#f0f4fa; color:#3182ce; border-color:#3182ce; }
+  .my-toolbar {
+    padding:10px 8px; background:#fff8f2; border:1px solid #f0d5c0; border-bottom:none;
+    display:flex; align-items:center; gap:8px; font-size:12.5px;
+  }
+  .my-toolbar h3 { margin:0; font-size:14px; color:#e8531f; }
+  .my-toolbar button {
+    padding:5px 12px; font-size:12.5px; border:1px solid #cfd6de; background:white; color:#333;
+    cursor:pointer; border-radius:4px;
+  }
+  .my-toolbar button:hover { background:#f0f4fa; }
+  .my-toolbar button.primary { background:#e8531f; color:white; border-color:#e8531f; }
+  .my-toolbar .spacer { flex:1; }
+  .my-toolbar .count { color:#888; font-size:11.5px; }
+
+  .panel.my-panel .card { cursor:grab; }
+  .panel.my-panel .card.dragging { opacity:0.4; cursor:grabbing; }
+  .panel.my-panel td.drop-over { background:#fff4ec !important; outline:2px dashed #e8531f; outline-offset:-2px; }
+  .panel.my-panel .card-remove { display:block; background:#e53e3e; }
+  .panel.my-panel .card-remove:before { content:"×"; }
+
+  /* SKU 选择弹窗 */
+  .picker-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100;
+                  align-items:center; justify-content:center; }
+  .picker-modal.open { display:flex; }
+  .picker-box { background:white; padding:16px 20px; border-radius:8px; width:640px; max-width:90vw;
+                max-height:85vh; display:flex; flex-direction:column; box-shadow:0 8px 24px rgba(0,0,0,0.2); }
+  .picker-box h3 { margin:0 0 10px; font-size:15px; }
+  .picker-box .search { padding:7px 10px; font-size:13px; border:1px solid #ccc; border-radius:4px; }
+  .picker-box .list { flex:1; overflow:auto; margin:10px 0; border:1px solid #eee; border-radius:4px;
+                      max-height:50vh; }
+  .picker-box .row { display:flex; align-items:center; gap:8px; padding:5px 8px; border-bottom:1px solid #f0f0f0;
+                     cursor:pointer; }
+  .picker-box .row:hover { background:#f7fafc; }
+  .picker-box .row.checked { background:#fff4ec; }
+  .picker-box .row img { width:36px; height:36px; object-fit:contain; background:#fafbfc; border-radius:3px; }
+  .picker-box .row .rname { flex:1; font-size:12.5px; }
+  .picker-box .row .rprice { font-size:11px; color:#a93226; font-weight:600; margin-right:6px; }
+  .picker-box .row .rsales { font-size:10.5px; color:#e8531f; font-weight:600; }
+  .picker-box .footer { display:flex; justify-content:space-between; align-items:center; padding-top:8px;
+                        border-top:1px solid #eee; font-size:12px; color:#666; }
+  .picker-box .footer button { padding:6px 14px; font-size:13px; border:1px solid #cfd6de; background:white;
+                               cursor:pointer; border-radius:4px; margin-left:6px; }
+  .picker-box .footer button.primary { background:#e8531f; color:white; border-color:#e8531f; }
 </style>
 </head>
 <body>
@@ -124,7 +176,7 @@
     <span class="hidden-count" id="hidden-count"></span>
   </div>
   <div class="legend"><span class="lgd" style="background:#fdecea;border-left:3px solid #e74c3c"><b style="color:#e74c3c">美的</b> · 75款</span> <span class="lgd" style="background:#eaf3fa;border-left:3px solid #3498db"><b style="color:#3498db">海尔</b> · 53款</span> <span class="lgd" style="background:#e6f7ec;border-left:3px solid #27ae60"><b style="color:#27ae60">容声</b> · 35款</span></div>
-  <div class="tabs"><button class="tab active" data-target="all">全部 (163)</button><button class="tab" data-target="法式">法式 (54)</button><button class="tab" data-target="十字">十字 (51)</button><button class="tab" data-target="对开">对开 (15)</button><button class="tab" data-target="小冰箱">小冰箱 (43)</button></div>
+  <div class="tabs"><button class="tab active" data-target="all">全部 (163)</button><button class="tab" data-target="法式">法式 (54)</button><button class="tab" data-target="十字">十字 (51)</button><button class="tab" data-target="对开">对开 (15)</button><button class="tab" data-target="小冰箱">小冰箱 (43)</button><button class="tab-add" id="tab-add-btn" title="新建自定义 tab">＋ 我的选型</button></div>
   <section class="panel active" id="panel-all"><div class="panel-hint">全部 163 款(美的75 · 海尔53 · 容声35),纵轴=品牌 · 横轴=价格</div><div class="panel-scroll"><table><thead><tr><th></th><th class="price-head"><1k</th><th class="price-head">1k-2k</th><th class="price-head">2k-3k</th><th class="price-head">3k-4k</th><th class="price-head">4k-5k</th><th class="price-head">5k-6k</th><th class="price-head">6k-7k</th><th class="price-head">7k-8k</th></tr></thead><tbody><tr><th class="brand-head" style="background:#fdecea;color:#e74c3c">美的<br><span class="cnt">75款</span></th><td>
       <div class="card" data-sku="100239644065" data-brand="美的" style="background:#fdecea;border-left:3px solid #e74c3c">
         <div class="thumb-wrap">
@@ -185,7 +237,7 @@
             <span class="name" title="美的冰箱2026新款220升家用家电三门冰箱小型家用一级能效宿舍租房低音运行极地白MR-231T国家补贴&#10;型号: MR-231T&#10;SKU: 100241394417">231白</span>
             <span class="tag price">¥898</span>
           </div>
-          <div class="line"><span class="tag liter">?L</span></div>
+          <div class="line"><span class="tag liter">220L</span></div>
           <ul class="feats"><li>一级能效</li><li>低音</li><li>三门</li></ul>
         </div>
       </div>
@@ -393,7 +445,7 @@
             <span class="name" title="美的冰箱2026新款186升两门双门家用一级能效风冷无霜出租房双系统净味节能小型冰箱MR-196W灰国家补贴&#10;型号: MR-196W&#10;SKU: 100241394435">196灰</span>
             <span class="tag price">¥1022</span>
           </div>
-          <div class="line"><span class="tag liter">?L</span></div>
+          <div class="line"><span class="tag liter">186L</span></div>
           <ul class="feats"><li>一级能效</li><li>风冷无霜</li><li>净味</li><li>无霜</li></ul>
         </div>
       </div>
@@ -601,7 +653,7 @@
             <span class="name" title="美的480升十字门冰箱家用一级能效风冷无霜双变频净味以旧换新BCD-480WSPZM(E)国家补贴&#10;型号: BCD-480WSPZM(E)&#10;SKU: 100135358557">480</span>
             <span class="tag price">¥2189</span>
           </div>
-          <div class="line"><span class="tag liter">?L</span></div>
+          <div class="line"><span class="tag liter">480L</span></div>
           <ul class="feats"><li>变频</li><li>一级能效</li><li>风冷无霜</li><li>净味</li></ul>
         </div>
       </div>
@@ -3657,7 +3709,7 @@
             <span class="name" title="美的480升十字门冰箱家用一级能效风冷无霜双变频净味以旧换新BCD-480WSPZM(E)国家补贴&#10;型号: BCD-480WSPZM(E)&#10;SKU: 100135358557">480</span>
             <span class="tag price">¥2189</span>
           </div>
-          <div class="line"><span class="tag liter">?L</span></div>
+          <div class="line"><span class="tag liter">480L</span></div>
           <ul class="feats"><li>变频</li><li>一级能效</li><li>风冷无霜</li><li>净味</li></ul>
         </div>
       </div>
@@ -4713,7 +4765,7 @@
             <span class="name" title="美的冰箱2026新款220升家用家电三门冰箱小型家用一级能效宿舍租房低音运行极地白MR-231T国家补贴&#10;型号: MR-231T&#10;SKU: 100241394417">231白</span>
             <span class="tag price">¥898</span>
           </div>
-          <div class="line"><span class="tag liter">?L</span></div>
+          <div class="line"><span class="tag liter">220L</span></div>
           <ul class="feats"><li>一级能效</li><li>低音</li><li>三门</li></ul>
         </div>
       </div>
@@ -4889,7 +4941,7 @@
             <span class="name" title="美的冰箱2026新款186升两门双门家用一级能效风冷无霜出租房双系统净味节能小型冰箱MR-196W灰国家补贴&#10;型号: MR-196W&#10;SKU: 100241394435">196灰</span>
             <span class="tag price">¥1022</span>
           </div>
-          <div class="line"><span class="tag liter">?L</span></div>
+          <div class="line"><span class="tag liter">186L</span></div>
           <ul class="feats"><li>一级能效</li><li>风冷无霜</li><li>净味</li><li>无霜</li></ul>
         </div>
       </div>
@@ -5404,10 +5456,27 @@
     </div>
   </div>
 
+  <!-- SKU 选择弹窗 (给自定义 tab 用) -->
+  <div class="picker-modal" id="picker-modal">
+    <div class="picker-box">
+      <h3>选择要加入 "<span id="picker-tab-name"></span>" 的 SKU</h3>
+      <input class="search" id="picker-search" placeholder="搜索型号、品牌、系列..." autocomplete="off">
+      <div class="list" id="picker-list"></div>
+      <div class="footer">
+        <span id="picker-count">已选 0 个</span>
+        <div>
+          <button id="picker-cancel">取消</button>
+          <button id="picker-ok" class="primary">加入</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 <script>
   const STORAGE_KEY = 'v8_edit_state';
-  const state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"hidden":[],"custom":[],"edits":{}}');
+  const state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"hidden":[],"custom":[],"edits":{},"myTabs":[]}');
   if (!state.edits) state.edits = {};  // backward compat for older saved state
+  if (!state.myTabs) state.myTabs = [];  // 自定义 tab: [{id, name, skus: [{sku_id, order}]}]
   function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
   function updateCount() {
     const c = state.hidden.length;
@@ -5843,6 +5912,377 @@
     ['add-name','add-price','add-liters','add-series','add-img','add-url','add-feats'].forEach(id => document.getElementById(id).value = '');
     renderCustomCards();
   });
+
+  // ============= 自定义 tab (我的选型) =============
+  // 数据结构:state.myTabs = [{id, name, skus: [{sku_id, order}]}]
+  // 面板 id: panel-my-<tabId>
+  // 生成 tab 唯一 id
+  function genTabId() { return 'my' + Date.now().toString(36) + Math.floor(Math.random()*1000); }
+
+  // 价格段(和门体 tab 保持一致)
+  function priceBucketMy(P) {
+    if (!P) return null;
+    if (P<1000) return '<1k'; if (P<2000) return '1k-2k'; if (P<3000) return '2k-3k';
+    if (P<4000) return '3k-4k'; if (P<5000) return '4k-5k'; if (P<6000) return '5k-6k';
+    if (P<7000) return '6k-7k'; if (P<8000) return '7k-8k'; return '8k+';
+  }
+  const MY_PRICE_ORDER = ['<1k','1k-2k','2k-3k','3k-4k','4k-5k','5k-6k','6k-7k','7k-8k','8k+'];
+
+  // 从 panel-all 拉一份 SKU 全库:sku_id -> {brand, name, price, sales_amt, thumbHtml, cardHtml}
+  const SKU_INDEX = (() => {
+    const idx = {};
+    // 只从 panel-all 拿(其他 tab 是重复渲染)
+    const panelAll = document.getElementById('panel-all');
+    if (!panelAll) return idx;
+    panelAll.querySelectorAll('.card').forEach(card => {
+      const sku = card.dataset.sku;
+      const brand = card.dataset.brand || '';
+      if (idx[sku]) return;
+      const nameEl = card.querySelector('.name');
+      const priceEl = card.querySelector('.tag.price');
+      const salesEl = card.querySelector('.tag.sales');
+      const qtyEl = card.querySelector('.tag.qty');
+      const imgEl = card.querySelector('.thumb img');
+      const name = nameEl ? nameEl.textContent.trim() : sku;
+      const priceStr = priceEl ? priceEl.textContent.replace(/[^\d.]/g,'') : '';
+      const price = priceStr ? parseFloat(priceStr) : null;
+      const salesStr = salesEl ? salesEl.textContent : '';
+      // 提取月销 XX万 → number(万)
+      const salesM = salesStr.match(/([\d.]+)/);
+      const salesAmt = salesM ? parseFloat(salesM[1]) : 0;
+      idx[sku] = {
+        sku, brand, name, price, salesAmt,
+        salesText: salesStr,
+        qtyText: qtyEl ? qtyEl.textContent : '',
+        img: imgEl ? imgEl.src : '',
+        cardOuterHTML: card.outerHTML,
+      };
+    });
+    return idx;
+  })();
+
+  // 渲染 tab 按钮
+  function renderMyTabButtons() {
+    const tabsBar = document.querySelector('.tabs');
+    // 移除旧的 tab-my
+    tabsBar.querySelectorAll('.tab.tab-my').forEach(b => b.remove());
+    // 在 add 按钮前插入
+    const addBtn = document.getElementById('tab-add-btn');
+    state.myTabs.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'tab tab-my';
+      btn.dataset.target = t.id;
+      btn.textContent = `${t.name} (${t.skus.length})`;
+      btn.title = '点击切换 · 双击重命名 · 右键删除';
+      btn.addEventListener('click', () => switchToTab(t.id));
+      btn.addEventListener('dblclick', () => renameTab(t.id));
+      btn.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        if (confirm(`确定删除自定义 tab "${t.name}"?`)) deleteTab(t.id);
+      });
+      tabsBar.insertBefore(btn, addBtn);
+    });
+  }
+
+  // 渲染 tab 对应的 panel
+  function renderMyPanel(tab) {
+    const panelId = 'panel-' + tab.id;
+    let panel = document.getElementById(panelId);
+    if (!panel) {
+      panel = document.createElement('section');
+      panel.className = 'panel my-panel';
+      panel.id = panelId;
+      // 追加到最后一个 panel 之后
+      const lastPanel = document.querySelector('.panel:last-of-type');
+      lastPanel.parentNode.insertBefore(panel, lastPanel.nextSibling);
+    }
+    // 决定列:只显示"当前 tab 里 SKU 覆盖到的"价格段
+    const bucketMap = {};
+    MY_PRICE_ORDER.forEach(pb => bucketMap[pb] = []);
+    tab.skus.forEach(item => {
+      const info = SKU_INDEX[item.sku_id];
+      if (!info) return;
+      const pb = priceBucketMy(info.price);
+      if (pb) bucketMap[pb].push({...info, order: item.order});
+    });
+    const activeCols = MY_PRICE_ORDER.filter(pb => bucketMap[pb].length > 0);
+    // 排序:如果 order 有值(用户手拖过)按 order,否则按 salesAmt 降序
+    activeCols.forEach(pb => {
+      bucketMap[pb].sort((a,b) => {
+        if (a.order != null && b.order != null) return a.order - b.order;
+        if (a.order != null) return -1;
+        if (b.order != null) return 1;
+        return (b.salesAmt || 0) - (a.salesAmt || 0);
+      });
+    });
+
+    const totalCount = tab.skus.length;
+    const validCount = MY_PRICE_ORDER.reduce((s,pb) => s + bucketMap[pb].length, 0);
+    const missing = totalCount - validCount;
+
+    // toolbar
+    const toolbarHTML = `
+      <div class="my-toolbar">
+        <h3>${escapeHtml(tab.name)}</h3>
+        <span class="count">共 ${validCount} 款${missing > 0 ? ` · <span style="color:#e53e3e">${missing} 张暂无价格信息</span>` : ''}</span>
+        <div class="spacer"></div>
+        <button class="btn-my-add" data-tab="${tab.id}">＋ 添加 SKU</button>
+        <button class="btn-my-rename" data-tab="${tab.id}">✎ 重命名</button>
+        <button class="btn-my-clear" data-tab="${tab.id}">清空</button>
+        <button class="btn-my-delete" data-tab="${tab.id}" style="color:#e53e3e">× 删除此 tab</button>
+      </div>
+    `;
+
+    const emptyHint = totalCount === 0
+      ? `<div style="padding:40px; text-align:center; color:#888; background:white; border:1px dashed #ccc;">
+           这个 tab 还是空的<br><br>
+           <button class="btn-my-add" data-tab="${tab.id}" style="padding:8px 20px; font-size:13px; background:#e8531f; color:white; border:none; border-radius:4px; cursor:pointer;">＋ 添加 SKU</button>
+         </div>`
+      : '';
+
+    let tableHTML = '';
+    if (activeCols.length > 0) {
+      const headers = activeCols.map(p => `<th class="price-head">${escapeHtml(p)}</th>`).join('');
+      const cells = activeCols.map(pb => {
+        const cards = bucketMap[pb].map(info => wrapCardForMyTab(info, tab.id)).join('');
+        return `<td data-bucket="${escapeHtml(pb)}" data-tab="${tab.id}">${cards || '<div class="empty">拖到这</div>'}</td>`;
+      }).join('');
+      tableHTML = `<div class="panel-scroll"><table><thead><tr>${headers}</tr></thead><tbody><tr>${cells}</tr></tbody></table></div>`;
+    }
+
+    panel.innerHTML = toolbarHTML + emptyHint + tableHTML;
+
+    // 绑定 toolbar 按钮
+    panel.querySelectorAll('.btn-my-add').forEach(b => b.addEventListener('click', () => openPicker(tab.id)));
+    panel.querySelectorAll('.btn-my-rename').forEach(b => b.addEventListener('click', () => renameTab(tab.id)));
+    panel.querySelectorAll('.btn-my-clear').forEach(b => b.addEventListener('click', () => {
+      if (confirm(`清空 "${tab.name}" 里的所有 SKU?`)) {
+        tab.skus = []; save(); renderMyPanel(tab); renderMyTabButtons();
+      }
+    }));
+    panel.querySelectorAll('.btn-my-delete').forEach(b => b.addEventListener('click', () => {
+      if (confirm(`确定删除 tab "${tab.name}"?`)) deleteTab(tab.id);
+    }));
+
+    // 绑定卡片拖拽 + 移除
+    panel.querySelectorAll('.card').forEach(card => attachMyCardHandlers(card, tab.id));
+    // 绑定 td 作为 drop target
+    panel.querySelectorAll('td[data-bucket]').forEach(td => attachTdDrop(td, tab.id));
+  }
+
+  function wrapCardForMyTab(info, tabId) {
+    // 用 SKU_INDEX 里存的原始 cardOuterHTML,加上 data-my-tab 标识 + drag
+    const tmp = document.createElement('div');
+    tmp.innerHTML = info.cardOuterHTML;
+    const card = tmp.firstElementChild;
+    card.setAttribute('draggable', 'true');
+    card.dataset.myTab = tabId;
+    // 移除任何已存在的 card-remove/card-edit 按钮(避免继承 panel-all 的),重新加自定义的 remove
+    card.querySelectorAll('.card-remove, .card-edit').forEach(x => x.remove());
+    const rm = document.createElement('div');
+    rm.className = 'card-remove';
+    rm.title = '从此 tab 移除';
+    rm.style.display = 'block';
+    card.appendChild(rm);
+    return card.outerHTML;
+  }
+
+  function attachMyCardHandlers(card, tabId) {
+    // remove
+    const rm = card.querySelector('.card-remove');
+    if (rm) {
+      rm.addEventListener('click', e => {
+        e.stopPropagation();
+        const tab = state.myTabs.find(t => t.id === tabId);
+        if (!tab) return;
+        tab.skus = tab.skus.filter(s => s.sku_id !== card.dataset.sku);
+        save(); renderMyPanel(tab); renderMyTabButtons();
+      });
+    }
+    // drag
+    card.addEventListener('dragstart', e => {
+      card.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', JSON.stringify({sku: card.dataset.sku, tabId}));
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+  }
+
+  function attachTdDrop(td, tabId) {
+    td.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      td.classList.add('drop-over');
+    });
+    td.addEventListener('dragleave', () => td.classList.remove('drop-over'));
+    td.addEventListener('drop', e => {
+      e.preventDefault();
+      td.classList.remove('drop-over');
+      const data = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
+      if (!data.sku) return;
+      // 找 drop 目标之前的兄弟卡片,决定 order
+      const cards = Array.from(td.querySelectorAll('.card'));
+      const rect = td.getBoundingClientRect();
+      const y = e.clientY;
+      // 找到应插入的位置(第一个 midpoint 大于 y 的卡片之前)
+      let insertBefore = null;
+      for (const c of cards) {
+        if (c.dataset.sku === data.sku) continue;
+        const cr = c.getBoundingClientRect();
+        if (y < cr.top + cr.height / 2) { insertBefore = c; break; }
+      }
+      const tab = state.myTabs.find(t => t.id === tabId);
+      if (!tab) return;
+      // 移除旧的 sku 记录(如果原本在这个 tab)
+      const existing = tab.skus.find(s => s.sku_id === data.sku);
+      if (!existing) {
+        tab.skus.push({sku_id: data.sku, order: null});
+      }
+      // 计算新 order:根据 insertBefore 的 sku 找它当前 order,插到之前
+      const bucketOrder = cards.filter(c => c.dataset.sku !== data.sku).map(c => c.dataset.sku);
+      const insertBeforeSku = insertBefore ? insertBefore.dataset.sku : null;
+      const finalOrder = insertBeforeSku
+        ? bucketOrder.indexOf(insertBeforeSku)
+        : bucketOrder.length;
+      // 简单实现:重算 bucket 内所有 SKU 的 order = 0,1,2,... 保存
+      // 先构建新顺序
+      const newOrderList = [];
+      bucketOrder.slice(0, finalOrder).forEach(s => newOrderList.push(s));
+      newOrderList.push(data.sku);
+      bucketOrder.slice(finalOrder).forEach(s => newOrderList.push(s));
+      newOrderList.forEach((sku, i) => {
+        const rec = tab.skus.find(x => x.sku_id === sku);
+        if (rec) rec.order = i + 1;  // 1-based,避免和 null 混淆
+      });
+      save();
+      renderMyPanel(tab);
+      renderMyTabButtons();
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function switchToTab(tabId) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    const btn = document.querySelector(`.tab[data-target="${tabId}"]`);
+    const panel = document.getElementById('panel-' + tabId);
+    if (btn) btn.classList.add('active');
+    if (panel) panel.classList.add('active');
+  }
+
+  function newTab() {
+    const name = prompt('给这个 tab 起个名字:', '我的选型 ' + (state.myTabs.length + 1));
+    if (!name || !name.trim()) return;
+    const tab = {id: genTabId(), name: name.trim(), skus: []};
+    state.myTabs.push(tab);
+    save();
+    renderMyTabButtons();
+    renderMyPanel(tab);
+    switchToTab(tab.id);
+  }
+
+  function renameTab(tabId) {
+    const tab = state.myTabs.find(t => t.id === tabId);
+    if (!tab) return;
+    const name = prompt('新名字:', tab.name);
+    if (!name || !name.trim()) return;
+    tab.name = name.trim();
+    save();
+    renderMyTabButtons();
+    renderMyPanel(tab);
+  }
+
+  function deleteTab(tabId) {
+    state.myTabs = state.myTabs.filter(t => t.id !== tabId);
+    save();
+    const panel = document.getElementById('panel-' + tabId);
+    if (panel) panel.remove();
+    renderMyTabButtons();
+    // 切回全部
+    switchToTab('all');
+  }
+
+  // ---- SKU 选择弹窗 ----
+  let pickerCtx = { tabId: null, selected: new Set() };
+  function openPicker(tabId) {
+    const tab = state.myTabs.find(t => t.id === tabId);
+    if (!tab) return;
+    pickerCtx = { tabId, selected: new Set(tab.skus.map(s => s.sku_id)) };
+    document.getElementById('picker-tab-name').textContent = tab.name;
+    document.getElementById('picker-search').value = '';
+    renderPickerList('');
+    document.getElementById('picker-modal').classList.add('open');
+    setTimeout(() => document.getElementById('picker-search').focus(), 50);
+  }
+
+  function renderPickerList(query) {
+    const q = query.trim().toLowerCase();
+    const list = document.getElementById('picker-list');
+    const all = Object.values(SKU_INDEX);
+    all.sort((a,b) => (b.salesAmt || 0) - (a.salesAmt || 0));
+    const filtered = all.filter(info => {
+      if (!q) return true;
+      return (info.name + info.brand + info.sku).toLowerCase().includes(q);
+    });
+    list.innerHTML = filtered.map(info => {
+      const checked = pickerCtx.selected.has(info.sku);
+      return `<div class="row ${checked ? 'checked' : ''}" data-sku="${info.sku}">
+        <input type="checkbox" ${checked ? 'checked' : ''}>
+        <img src="${info.img}" alt="">
+        <div class="rname"><b>${escapeHtml(info.brand)}</b> ${escapeHtml(info.name)} <span style="color:#888;font-size:10.5px">${info.sku}</span></div>
+        <span class="rprice">¥${info.price || '?'}</span>
+        <span class="rsales">${escapeHtml(info.salesText)}</span>
+      </div>`;
+    }).join('') || '<div style="padding:20px; text-align:center; color:#888;">没找到匹配的 SKU</div>';
+    list.querySelectorAll('.row').forEach(row => {
+      row.addEventListener('click', () => {
+        const sku = row.dataset.sku;
+        if (pickerCtx.selected.has(sku)) {
+          pickerCtx.selected.delete(sku);
+          row.classList.remove('checked');
+          row.querySelector('input').checked = false;
+        } else {
+          pickerCtx.selected.add(sku);
+          row.classList.add('checked');
+          row.querySelector('input').checked = true;
+        }
+        updatePickerCount();
+      });
+    });
+    updatePickerCount();
+  }
+  function updatePickerCount() {
+    document.getElementById('picker-count').textContent = `已选 ${pickerCtx.selected.size} 个`;
+  }
+
+  document.getElementById('tab-add-btn').addEventListener('click', newTab);
+  document.getElementById('picker-search').addEventListener('input', e => renderPickerList(e.target.value));
+  document.getElementById('picker-cancel').addEventListener('click', () => {
+    document.getElementById('picker-modal').classList.remove('open');
+  });
+  document.getElementById('picker-ok').addEventListener('click', () => {
+    const tab = state.myTabs.find(t => t.id === pickerCtx.tabId);
+    if (!tab) return;
+    // 合并:保留原有 order 记录,新加的 order=null(自动按月销)
+    const existingIds = new Set(tab.skus.map(s => s.sku_id));
+    // 删除:如果原来有但取消了
+    tab.skus = tab.skus.filter(s => pickerCtx.selected.has(s.sku_id));
+    // 加:新选的
+    pickerCtx.selected.forEach(sku => {
+      if (!existingIds.has(sku)) tab.skus.push({sku_id: sku, order: null});
+    });
+    save();
+    renderMyPanel(tab);
+    renderMyTabButtons();
+    document.getElementById('picker-modal').classList.remove('open');
+  });
+
+  // 初始化所有已存在的自定义 tab
+  state.myTabs.forEach(t => renderMyPanel(t));
+  renderMyTabButtons();
 
   // Init
   applyHidden();
