@@ -2,7 +2,14 @@
 <html lang="zh">
 <head>
 <meta charset="utf-8">
-<title>京东自营冰箱 · 三品牌产品地图 v8</title>
+<title>京东自营冰箱——海美容产品地图</title>
+<script>
+  // 纯访问计数 - counterapi.dev; 只统计次数不追人
+  // 查看当前次数: https://api.counterapi.dev/v1/jd-fridge-map-dblows08/pv
+  (function(){
+    try { fetch('https://api.counterapi.dev/v1/jd-fridge-map-dblows08/pv/up',{mode:'cors',cache:'no-store'}); } catch(e){}
+  })();
+</script>
 <style>
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; margin: 18px; background:#f5f6f8; color:#222; }
   h1 { font-size: 22px; margin: 0 0 4px; display:inline-block; }
@@ -21,7 +28,7 @@
   .tab.active { background:#fff; color:#111; border-bottom-color:#3182ce; font-weight:600; box-shadow:0 -1px 4px rgba(0,0,0,0.04); }
   .panel { display:none; }
   .panel.active { display:block; }
-  .panel-hint { margin:0 0 10px; color:#666; font-size:12.5px; }
+  .panel-hint { display:none; }
   .panel-scroll { overflow: auto; max-height: calc(100vh - 200px); border:1px solid #e6e8ec; background:white; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
   table { border-collapse: separate; border-spacing: 0; width: 100%; table-layout: fixed; background:white; }
   th, td { border-right:1px solid #e6e8ec; border-bottom:1px solid #e6e8ec; vertical-align: top; padding:4px; }
@@ -33,8 +40,7 @@
   td { min-width:200px; }
   .empty { text-align:center; color:#c0c4cc; padding:14px 0; font-size:11px; }
   .card { position:relative; display:flex; gap:6px; padding:5px; margin-bottom:5px; border-radius:5px; align-items:flex-start; }
-  .thumb-wrap { flex:0 0 72px; display:flex; flex-direction:column; align-items:center; gap:3px; }
-  .thumb { width:72px; height:72px; background:#fafbfc; overflow:hidden; border-radius:4px; display:block; }
+  .thumb { flex:0 0 72px; width:72px; height:72px; background:#fafbfc; overflow:hidden; border-radius:4px; }
   .thumb img { width:100%; height:100%; object-fit:contain; }
   .thumb .no-img { width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#aab; font-size:10px; }
   .meta { flex:1; min-width:0; }
@@ -47,18 +53,6 @@
   .tag.liter { background:rgba(0,0,0,0.05); color:#1b6b32; }
   .tag.series-tag { background:rgba(52,152,219,0.12); color:#2c5282; margin-left:3px; font-weight:600; }
   .tag.price { background:transparent; color:#a93226; font-weight:700; font-size:11.5px; padding:0; }
-  .price-group { display:inline-flex; align-items:baseline; gap:4px; white-space:nowrap; flex-shrink:0; }
-  .tag.sales {
-    background: linear-gradient(135deg,#ff8a3d,#e8531f);
-    color:#fff; font-weight:700;
-    padding: 1.5px 6px;
-    border-radius: 10px;
-    font-size:10px;
-    box-shadow: 0 1px 2px rgba(232,83,31,0.28);
-    letter-spacing: 0.2px;
-    white-space:nowrap;
-    line-height:1.25;
-  }
   .feats { list-style:none; padding:0; margin:2px 0 0; font-size:10px; color:#555; line-height:1.35; }
   .feats li { padding:0 0 0 8px; text-indent:-8px; }
   .feats li:before { content:"· "; color:#999; }
@@ -66,10 +60,15 @@
   /* --- 编辑模式 --- */
   .card-remove { display:none; position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:50%; background:#e53e3e; color:white;
                   font-size:14px; line-height:18px; text-align:center; cursor:pointer; z-index:3; border:2px solid white; font-weight:700; user-select:none; }
+  .card-edit { display:none; position:absolute; bottom:-6px; right:-6px; width:20px; height:20px; border-radius:50%; background:#3182ce; color:white;
+                font-size:11px; line-height:18px; text-align:center; cursor:pointer; z-index:3; border:2px solid white; font-weight:700; user-select:none; }
+  .card-edit:before { content:"✎"; }
   body.edit-mode .card-remove { display:block; }
+  body.edit-mode .card-edit { display:block; }
   body.edit-mode .card:hover { box-shadow: 0 0 0 2px #3182ce; }
   body.edit-mode .thumb { pointer-events:none; }  /* 编辑模式下禁用图片跳转 */
   body.edit-mode .name { pointer-events:none; }
+  .card.edited { outline: 1.5px dashed #3182ce; outline-offset:-1px; }
   .card.hidden { display:none; }
   body.show-hidden .card.hidden { display:flex !important; opacity:0.5; outline:2px dashed #e53e3e; }
   body.show-hidden .card.hidden .card-remove { background:#38a169; }
@@ -87,10 +86,36 @@
   .modal .btns { margin-top:16px; display:flex; gap:8px; justify-content:flex-end; }
   .modal .btns button { padding:6px 14px; font-size:13px; border:1px solid #cfd6de; background:white; cursor:pointer; border-radius:4px; }
   .modal .btns button.primary { background:#3182ce; color:white; border-color:#3182ce; }
+
+  .thumb-wrap { flex:0 0 72px; display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .thumb-wrap > .thumb { width:72px; height:72px; }
+  .tag.sales {
+    background: linear-gradient(135deg,#ff8a3d,#e8531f);
+    color:#fff; font-weight:700;
+    padding: 1.5px 6px;
+    border-radius: 10px;
+    font-size:10px;
+    box-shadow: 0 1px 2px rgba(232,83,31,0.28);
+    letter-spacing: 0.2px;
+    white-space:nowrap;
+    line-height:1.25;
+  }
+
+  .tag.qty {
+    background:#fff;
+    color:#c0392b; font-weight:600;
+    padding: 0.5px 5px;
+    border-radius: 8px;
+    font-size:9.5px;
+    border:1px solid #ffd9c4;
+    white-space:nowrap;
+    line-height:1.25;
+    letter-spacing: 0.1px;
+  }
 </style>
 </head>
 <body>
-  <h1>京东自营冰箱 · 三品牌产品地图 v8</h1>
+  <h1>京东自营冰箱——海美容产品地图</h1>
   <div class="toolbar">
     <button id="btn-edit">✎ 编辑模式</button>
     <button id="btn-add" style="display:none">＋ 新增</button>
@@ -98,14 +123,14 @@
     <button id="btn-reset" style="display:none">重置</button>
     <span class="hidden-count" id="hidden-count"></span>
   </div>
-  <div class="sub">共 163 款(美的75 · 海尔53 · 容声35)· 全部 tab 按品牌 × 价格布局</div>
   <div class="legend"><span class="lgd" style="background:#fdecea;border-left:3px solid #e74c3c"><b style="color:#e74c3c">美的</b> · 75款</span> <span class="lgd" style="background:#eaf3fa;border-left:3px solid #3498db"><b style="color:#3498db">海尔</b> · 53款</span> <span class="lgd" style="background:#e6f7ec;border-left:3px solid #27ae60"><b style="color:#27ae60">容声</b> · 35款</span></div>
-  <div class="tabs"><button class="tab active" data-target="all">全部 (163)</button><button class="tab" data-target="法式">🇫🇷 法式 (54)</button><button class="tab" data-target="十字">✚ 十字 (51)</button><button class="tab" data-target="对开">⇔ 对开 (15)</button><button class="tab" data-target="小冰箱">▫ 小冰箱 (43)</button></div>
+  <div class="tabs"><button class="tab active" data-target="all">全部 (163)</button><button class="tab" data-target="法式">法式 (54)</button><button class="tab" data-target="十字">十字 (51)</button><button class="tab" data-target="对开">对开 (15)</button><button class="tab" data-target="小冰箱">小冰箱 (43)</button></div>
   <section class="panel active" id="panel-all"><div class="panel-hint">全部 163 款(美的75 · 海尔53 · 容声35),纵轴=品牌 · 横轴=价格</div><div class="panel-scroll"><table><thead><tr><th></th><th class="price-head"><1k</th><th class="price-head">1k-2k</th><th class="price-head">2k-3k</th><th class="price-head">3k-4k</th><th class="price-head">4k-5k</th><th class="price-head">5k-6k</th><th class="price-head">6k-7k</th><th class="price-head">7k-8k</th></tr></thead><tbody><tr><th class="brand-head" style="background:#fdecea;color:#e74c3c">美的<br><span class="cnt">75款</span></th><td>
       <div class="card" data-sku="100239644065" data-brand="美的" style="background:#fdecea;border-left:3px solid #e74c3c">
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100239644065.html" target="_blank"><img src="img/100239644065.jpg" loading="lazy" alt="美的182L两门小冰箱灰色两门小户型一级能效客厅家用租房宿舍可冷藏冷冻不占地MR-191A"></a>
           <span class="tag sales">月销 241万</span>
+          <span class="tag qty">销量 2.6k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -121,6 +146,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100319780812.html" target="_blank"><img src="img/100319780812.jpg" loading="lazy" alt="美的220L三门冰箱灰色一级能效租房家用客厅宿舍小冰箱三开门省电低音MR-231T"></a>
           <span class="tag sales">月销 218万</span>
+          <span class="tag qty">销量 2.0k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -136,6 +162,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100240806313.html" target="_blank"><img src="img/100240806313.jpg" loading="lazy" alt="美的冰箱2026新款182升两门家电冰箱小型家用出租房双门一级能效节能家用冷冻小冰箱MR-191A白国家补贴【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 79万</span>
+          <span class="tag qty">销量 861</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -151,6 +178,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100241394417.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 71万</span>
+          <span class="tag qty">销量 657</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -166,6 +194,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100109019215.html" target="_blank"><img src="img/100109019215.jpg" loading="lazy" alt="美的219L三门冰箱白色租房家用客厅小型冰箱中门软冷冻节能省电低音MR-230TE"></a>
           <span class="tag sales">月销 40万</span>
+          <span class="tag qty">销量 462</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -181,6 +210,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100016408504.html" target="_blank"><img src="img/100016408504.jpg" loading="lazy" alt="美的93L单门小冰箱一级低音复古白色小单温冷藏租房家用宿舍办公室可放美妆BC-93MF"></a>
           <span class="tag sales">月销 39万</span>
+          <span class="tag qty">销量 582</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -196,6 +226,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100133046493.html" target="_blank"><img src="img/100133046493.jpg" loading="lazy" alt="美的182L双开门两门小户型家用客厅租房宿舍冰箱可冷藏冷冻双温小巧不占地低音运行BCD-182M"></a>
           <span class="tag sales">月销 21万</span>
+          <span class="tag qty">销量 295</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -211,6 +242,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100127848554.html" target="_blank"><img src="img/100127848554.jpg" loading="lazy" alt="美的181L两门冰箱白色两门小户型客厅家用电冰箱租房宿舍低音节能低噪可冷藏冷冻不占地MR-190E"></a>
           <span class="tag sales">月销 18万</span>
+          <span class="tag qty">销量 236</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -226,6 +258,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100010774115.html" target="_blank"><img src="img/100010774115.jpg" loading="lazy" alt="美的112L两门小冰箱灰色双温小冰箱迷你家用宿舍租房灵活摆放节能低音深冷速冻 BCD-112CM"></a>
           <span class="tag sales">月销 10万</span>
+          <span class="tag qty">销量 141</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -241,6 +274,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100001478945.html" target="_blank"><img src="img/100001478945.jpg" loading="lazy" alt="美的88L两门小冰箱白色迷你冰箱租房宿舍办公室小型家用双温可冷冻冷藏节能BCD-88CM"></a>
           <span class="tag sales">月销 9.1万</span>
+          <span class="tag qty">销量 130</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -256,6 +290,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/372713.html" target="_blank"><img src="img/372713.jpg" loading="lazy" alt="美的45L单门小冰箱白色迷你租房宿舍办公室家用单温冷藏小型电冰箱美妆可用节能运行BC-45M"></a>
           <span class="tag sales">月销 1.7万</span>
+          <span class="tag qty">销量 37</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -271,6 +306,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100250022852.html" target="_blank"><img src="img/100250022852.jpg" loading="lazy" alt="美的607pro双开门冰箱超大容量一级能效家用风冷无霜大冷冻节能星辰砂BCD-607WKPM(E)以旧换新国家补贴"></a>
           <span class="tag sales">月销 409万</span>
+          <span class="tag qty">销量 2.1k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -286,6 +322,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100140558574.html" target="_blank"><img src="img/100140558574.jpg" loading="lazy" alt="美的238升三门冰箱灰色小型风冷家用变频一级能效宿舍租房以旧换新小冰箱MR-249WTPE"></a>
           <span class="tag sales">月销 350万</span>
+          <span class="tag qty">销量 2.5k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -301,6 +338,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100024641402.html" target="_blank"><img src="img/100024641402.jpg" loading="lazy" alt="美的325L法式四开门冰箱小户型超薄风冷无霜一级能效变频节能净味以旧换新BCD-325WFPM(E)国家补贴"></a>
           <span class="tag sales">月销 144万</span>
+          <span class="tag qty">销量 690</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -316,6 +354,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100358814424.html" target="_blank"><img src="img/100358814424.jpg" loading="lazy" alt="美的271升三门冰箱灰新国标小型电冰箱三开门一级能效风冷无霜双净味家用租房MR-283WTPE"></a>
           <span class="tag sales">月销 129万</span>
+          <span class="tag qty">销量 833</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -331,6 +370,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100321086210.html" target="_blank"><img src="img/100321086210.jpg" loading="lazy" alt="美的239升三门冰箱灰色家用小冰箱小型三开门风冷无霜一级能效以旧换新电冰箱MR-251WTP国家补贴"></a>
           <span class="tag sales">月销 122万</span>
+          <span class="tag qty">销量 897</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -346,6 +386,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100241394435.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 122万</span>
+          <span class="tag qty">销量 1.0k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -361,6 +402,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100272035052.html" target="_blank"><img src="img/100272035052.jpg" loading="lazy" alt="美的572双开门冰箱大容量一级能效双变频节能风冷无霜囤货净味以旧换新国家补贴BCD-572WKPM(Q)"></a>
           <span class="tag sales">月销 113万</span>
+          <span class="tag qty">销量 570</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -376,6 +418,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100213386663.html" target="_blank"><img src="img/100213386663.jpg" loading="lazy" alt="美的606升双开门冰箱一级能效风冷无霜净味双变频超大容量大冷冻BCD-606WKPM(E)国家补贴【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 75万</span>
+          <span class="tag qty">销量 353</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -391,6 +434,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100319780798.html" target="_blank"><img src="img/100319780798.jpg" loading="lazy" alt="美的186升二门冰箱白色双系统租房小型家用电冰箱风冷两门小冰一级能效以旧换新MR-196W"></a>
           <span class="tag sales">月销 72万</span>
+          <span class="tag qty">销量 589</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -406,6 +450,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100280053093.html" target="_blank"><img src="img/100280053093.jpg" loading="lazy" alt="美的271升三门冰箱白色新国标三开门家用小型电冰箱一级风冷租房小冰箱MR-283WTPE以旧换新"></a>
           <span class="tag sales">月销 42万</span>
+          <span class="tag qty">销量 243</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -421,6 +466,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100050127888.html" target="_blank"><img src="img/100050127888.jpg" loading="lazy" alt="美的271升三门冰箱灰色小型电冰箱三开门一级能效节能风冷无霜双净味家用租房MR-283WTPZE"></a>
           <span class="tag sales">月销 38万</span>
+          <span class="tag qty">销量 208</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -436,6 +482,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100163880526.html" target="_blank"><img src="img/100163880526.jpg" loading="lazy" alt="美的220L三门冰箱灰色租房家用客厅宿舍小型冰箱三开门三温低耗省电低音运行BCD-220TM"></a>
           <span class="tag sales">月销 37万</span>
+          <span class="tag qty">销量 488</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -451,6 +498,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100056743265.html" target="_blank"><img src="img/100056743265.jpg" loading="lazy" alt="美的239升三门冰箱白色家用小户型三开门风冷变频一级能效节能宿舍租房电冰箱MR-251WTPE"></a>
           <span class="tag sales">月销 36万</span>
+          <span class="tag qty">销量 214</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -466,6 +514,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100100537834.html" target="_blank"><img src="img/100100537834.jpg" loading="lazy" alt="美的324L法式多门冰箱小户型超薄风冷无霜一级能效变频节能净味以旧换新白色MR-340WFPE国家补贴"></a>
           <span class="tag sales">月销 33万</span>
+          <span class="tag qty">销量 152</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -481,6 +530,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100134276685.html" target="_blank"><img src="img/100134276685.jpg" loading="lazy" alt="美的271升三门冰箱白色三开门家用小型电冰箱一级能效风冷租房小冰箱MR-283WTPZE以旧换新"></a>
           <span class="tag sales">月销 7.1万</span>
+          <span class="tag qty">销量 37</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -496,6 +546,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100282981819.html" target="_blank"><img src="img/100282981819.jpg" loading="lazy" alt="美的480L十字门冰箱全空间养鲜抗菌净味新国标一级能效风冷无霜双变频以旧换新MR-497WSPEA"></a>
           <span class="tag sales">月销 122万</span>
+          <span class="tag qty">销量 581</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -511,6 +562,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100062957294.html" target="_blank"><img src="img/100062957294.jpg" loading="lazy" alt="美的505L十字门冰箱双系统双循环保鲜大容量三档变温一级能效风冷无霜MR-531WSPZE国家补贴"></a>
           <span class="tag sales">月销 121万</span>
+          <span class="tag qty">销量 408</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -526,6 +578,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100155265995.html" target="_blank"><img src="img/100155265995.jpg" loading="lazy" alt="美的508L十字门冰箱双系统2.0超薄零嵌入式大容量一级能效以旧换新BCD-508WUSPZM(E)国家补贴"></a>
           <span class="tag sales">月销 92万</span>
+          <span class="tag qty">销量 283</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -541,6 +594,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100135358557.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 90万</span>
+          <span class="tag qty">销量 379</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -556,6 +610,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100152122005.html" target="_blank"><img src="img/100152122005.jpg" loading="lazy" alt="美的真香系列501L十字门冰箱60厘米超薄大容量一级能效风冷无霜BCD-501WSPM(Q)"></a>
           <span class="tag sales">月销 79万</span>
+          <span class="tag qty">销量 320</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -571,6 +626,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100097259470.html" target="_blank"><img src="img/100097259470.jpg" loading="lazy" alt="美的536法式四开门冰箱511L大容量超薄嵌入式双系统2.0风冷无霜以旧换新白MR-536WUFPZE国家补贴"></a>
           <span class="tag sales">月销 77万</span>
+          <span class="tag qty">销量 223</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -586,6 +642,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100064527543.html" target="_blank"><img src="img/100064527543.jpg" loading="lazy" alt="美的506L法式四开门冰箱双系统双循环一级能效风冷无霜大容量以旧换新苍穹灰MR-532WFPZE国家补贴"></a>
           <span class="tag sales">月销 69万</span>
+          <span class="tag qty">销量 237</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -601,6 +658,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100149467123.html" target="_blank"><img src="img/100149467123.jpg" loading="lazy" alt="美的605L十字门冰箱超大容量全空间养鲜抗菌净味一级能效风冷无霜双变频以旧换新MR-635WSPZE国家补贴"></a>
           <span class="tag sales">月销 69万</span>
+          <span class="tag qty">销量 204</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -616,6 +674,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100209336301.html" target="_blank"><img src="img/100209336301.jpg" loading="lazy" alt="美的501L法式多门冰箱超薄大容量一级能效双变频风冷无霜以旧换新BCD-501WFPM(Q)国家补贴"></a>
           <span class="tag sales">月销 52万</span>
+          <span class="tag qty">销量 199</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -631,6 +690,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100097259466.html" target="_blank"><img src="img/100097259466.jpg" loading="lazy" alt="美的400L法式四开门冰箱超薄零嵌入式小户型一级能效风冷无霜节能变频以旧换新白色MR-418WFPE国家补贴"></a>
           <span class="tag sales">月销 48万</span>
+          <span class="tag qty">销量 162</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -646,6 +706,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100146301608.html" target="_blank"><img src="img/100146301608.jpg" loading="lazy" alt="美的505L十字门冰箱双系统双循环净化保鲜大容量一级能效风冷无霜谷雨灰以旧换新MR-531WSPZE国家补贴"></a>
           <span class="tag sales">月销 36万</span>
+          <span class="tag qty">销量 122</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -661,6 +722,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100065762615.html" target="_blank"><img src="img/100065762615.jpg" loading="lazy" alt="美的436L十字门冰箱60厘米超薄零嵌入式全空间养鲜一级能效风冷无霜以旧换新白色MR-457WUSPZE国家补贴"></a>
           <span class="tag sales">月销 32万</span>
+          <span class="tag qty">销量 105</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -676,6 +738,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100146301626.html" target="_blank"><img src="img/100146301626.jpg" loading="lazy" alt="美的506L法式四开门冰箱双系统双循环一级能效风冷无霜大容量以旧换新谷雨灰MR-532WFPZE国家补贴"></a>
           <span class="tag sales">月销 17万</span>
+          <span class="tag qty">销量 60</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -691,6 +754,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100250022854.html" target="_blank"><img src="img/100250022854.jpg" loading="lazy" alt="美的503L法式多门冰箱超薄零嵌入式一级能效风冷无霜变频大容量以旧换新白色BCD-503WUFPZM(E)国家补贴"></a>
           <span class="tag sales">月销 17万</span>
+          <span class="tag qty">销量 51</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -706,6 +770,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100214822144.html" target="_blank"><img src="img/100214822144.jpg" loading="lazy" alt="美的M60系列540升对开门双开门冰箱除菌超薄零嵌入式大容量一级能效风冷BCD-540WUKPZM(E)国家补贴"></a>
           <span class="tag sales">月销 16万</span>
+          <span class="tag qty">销量 46</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -721,6 +786,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100012369805.html" target="_blank"><img src="img/100012369805.jpg" loading="lazy" alt="美的471L十字门冰箱全空间养鲜抗菌净味一级能效风冷无霜双变频以旧换新BCD-471WSPZM(E)国家补贴"></a>
           <span class="tag sales">月销 12万</span>
+          <span class="tag qty">销量 52</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -736,6 +802,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100108283570.html" target="_blank"><img src="img/100108283570.jpg" loading="lazy" alt="美的446L法式多门冰箱超薄零嵌入式一级能效风冷无霜变频节能以旧换新白色MR-468WUFPZE国家补贴"></a>
           <span class="tag sales">月销 12万</span>
+          <span class="tag qty">销量 37</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -751,6 +818,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100371431926.html" target="_blank"><img src="img/100371431926.jpg" loading="lazy" alt="美的508L法式四开门冰箱新国标一级能效双系统双循环除菌净味无霜大容量2026新款MR-508WFJDPZE星尘黛"></a>
           <span class="tag sales">月销 96万</span>
+          <span class="tag qty">销量 301</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -766,6 +834,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100205282178.html" target="_blank"><img src="img/100205282178.jpg" loading="lazy" alt="美的安睡M60小机皇520L法式四开门冰箱双系统2.0超薄零嵌入式一级能效无霜白BCD-520WUFPZM(E)国家补贴"></a>
           <span class="tag sales">月销 79万</span>
+          <span class="tag qty">销量 175</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -781,6 +850,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100282986615.html" target="_blank"><img src="img/100282986615.jpg" loading="lazy" alt="美的真香系列508L十字门冰箱双系统大容量新国标一级能效风冷无霜双变频MR-508WSJDPZE白"></a>
           <span class="tag sales">月销 61万</span>
+          <span class="tag qty">销量 198</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -796,6 +866,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100339173806.html" target="_blank"><img src="img/100339173806.jpg" loading="lazy" alt="美的可爱多508Pro法式四开门冰箱超薄零嵌入式双系统净味除菌一级能效大容量2026新品MR-508WUFPZE白色"></a>
           <span class="tag sales">月销 54万</span>
+          <span class="tag qty">销量 129</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -811,6 +882,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100337098334.html" target="_blank"><img src="img/100337098334.jpg" loading="lazy" alt="美的可爱多508Pro十字门冰箱503L超薄零嵌双系统2.0净味除菌大容量一级能效补贴MR-508WUSPZE"></a>
           <span class="tag sales">月销 45万</span>
+          <span class="tag qty">销量 114</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -826,6 +898,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100257560945.html" target="_blank"><img src="img/100257560945.jpg" loading="lazy" alt="美的576L法式四开门冰箱双系统循环净味除菌一级能效风冷无霜大容量BCD-576WFPZM(E)白"></a>
           <span class="tag sales">月销 41万</span>
+          <span class="tag qty">销量 121</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -841,6 +914,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100113376219.html" target="_blank"><img src="img/100113376219.jpg" loading="lazy" alt="美的M60小机皇515升十字门冰箱超薄嵌入式双系统2.0大容量以旧换新MR-541WUSPZE国家补贴520姐妹"></a>
           <span class="tag sales">月销 33万</span>
+          <span class="tag qty">销量 76</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -856,6 +930,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100197227202.html" target="_blank"><img src="img/100197227202.jpg" loading="lazy" alt="美的真香508L法式多门冰箱超薄零嵌入式双系统一级能效大容量以旧换新白色BCD-508WUFPZM(E)国家补贴"></a>
           <span class="tag sales">月销 27万</span>
+          <span class="tag qty">销量 74</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -871,6 +946,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100055656149.html" target="_blank"><img src="img/100055656149.jpg" loading="lazy" alt="美的508L法式四开门冰箱双系统双循环一级能效除菌净味风冷大容量BCD-508WTPZM(E)白色国家补贴"></a>
           <span class="tag sales">月销 23万</span>
+          <span class="tag qty">销量 59</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -886,6 +962,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100007351130.html" target="_blank"><img src="img/100007351130.jpg" loading="lazy" alt="美的508L法式四开门冰箱双系统双循环一级能效除菌净味风冷无霜大容量BCD-508WTPZM(E)灰国家补贴"></a>
           <span class="tag sales">月销 20万</span>
+          <span class="tag qty">销量 55</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -901,6 +978,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100212486697.html" target="_blank"><img src="img/100212486697.jpg" loading="lazy" alt="美的558L法式多门冰箱超薄嵌入式一级能效风冷无霜除菌大容量制冰以旧换新BCD-558WUFIPZM(E)国家补贴"></a>
           <span class="tag sales">月销 20万</span>
+          <span class="tag qty">销量 43</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -916,6 +994,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100371430768.html" target="_blank"><img src="img/100371430768.jpg" loading="lazy" alt="美的508L法式四开门冰箱新国标一级能效双系统双循环除菌净味风冷无霜大容量2026新款MR-508WFJDPZE白"></a>
           <span class="tag sales">月销 16万</span>
+          <span class="tag qty">销量 48</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -931,6 +1010,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100283007435.html" target="_blank"><img src="img/100283007435.jpg" loading="lazy" alt="美的400L法式四开门冰箱新国标一级能效超薄零嵌入式小户型除菌净味无霜2026新款MR-421WUFJPZEA星尘白"></a>
           <span class="tag sales">月销 14万</span>
+          <span class="tag qty">销量 36</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -946,6 +1026,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100197227156.html" target="_blank"><img src="img/100197227156.jpg" loading="lazy" alt="美的508L十字门冰箱双系统双循环除菌净味大容量一级能效风冷无霜以旧换新白BCD-508WSPZM(E)"></a>
           <span class="tag sales">月销 4.9万</span>
+          <span class="tag qty">销量 14</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -961,6 +1042,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100182736647.html" target="_blank"><img src="img/100182736647.jpg" loading="lazy" alt="美的437L十字门冰箱60厘米超薄嵌入式除菌净味自动制冰一级能效风冷无霜以旧换新MR-460WUSPZE国家补贴"></a>
           <span class="tag sales">月销 4.6万</span>
+          <span class="tag qty">销量 12</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -976,6 +1058,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100063210422.html" target="_blank"><img src="img/100063210422.jpg" loading="lazy" alt="美的400L法式多门冰箱超薄零嵌入式小户型除菌净味一级能效风冷无霜以旧换新白色MR-421WUFPZE国家补贴"></a>
           <span class="tag sales">月销 3.2万</span>
+          <span class="tag qty">销量 7</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -991,6 +1074,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100121324389.html" target="_blank"><img src="img/100121324389.jpg" loading="lazy" alt="美的448L法式多门冰箱超薄零嵌入式除菌净味一级能效风冷无霜变频节能以旧换新MR-470WUFPZE国家补贴"></a>
           <span class="tag sales">月销 <1万</span>
+          <span class="tag qty">销量 1</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1006,6 +1090,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100190473017.html" target="_blank"><img src="img/100190473017.jpg" loading="lazy" alt="美的503L十字门冰箱60厘米超薄零嵌入式全空间养鲜一级能效风冷无霜以旧换新BCD-503WUSPZM(E)国家补贴"></a>
           <span class="tag sales">月销 <1万</span>
+          <span class="tag qty">销量 1</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1021,6 +1106,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100113376239.html" target="_blank"><img src="img/100113376239.jpg" loading="lazy" alt="美的M60机皇550法式四开门冰箱523L大容量超薄嵌入式双系统2.0除菌制冰白MR-550WUFIPZE国家补贴"></a>
           <span class="tag sales">月销 74万</span>
+          <span class="tag qty">销量 132</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1036,6 +1122,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100157003957.html" target="_blank"><img src="img/100157003957.jpg" loading="lazy" alt="美的大嵌750升对开门双开门冰箱超薄零嵌入式超大容量一级能效变频风冷无霜BCD-750WKPZM(E)国家补贴"></a>
           <span class="tag sales">月销 54万</span>
+          <span class="tag qty">销量 104</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1051,6 +1138,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100273504904.html" target="_blank"><img src="img/100273504904.jpg" loading="lazy" alt="美的熊墩墩601L十字门冰箱超薄零嵌入式双系统2.0净味超大容量国家补贴BCD-601WUSPZM(E)海贝黛"></a>
           <span class="tag sales">月销 52万</span>
+          <span class="tag qty">销量 96</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1066,6 +1154,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100262151142.html" target="_blank"><img src="img/100262151142.jpg" loading="lazy" alt="美的机皇550法式多门冰箱523L大容量制冰超薄嵌入双系统2.0除菌净味海贝黛MR-550WUFIPZE国家补贴【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 45万</span>
+          <span class="tag qty">销量 80</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1081,6 +1170,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100143434406.html" target="_blank"><img src="img/100143434406.jpg" loading="lazy" alt="美的M60系列613升对开门双开门冰箱双系统超薄零嵌入式超大容量一级玻璃面板MR-643WUKGPZE国家补贴"></a>
           <span class="tag sales">月销 33万</span>
+          <span class="tag qty">销量 68</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1096,6 +1186,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100245792635.html" target="_blank"><img src="img/100245792635.jpg" loading="lazy" alt="美的熊墩墩601L十字门冰箱超薄零嵌入式双系统2.0净味超大容量国家补贴BCD-601WUSPZM(E)星尘白"></a>
           <span class="tag sales">月销 31万</span>
+          <span class="tag qty">销量 58</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1111,6 +1202,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100273256482.html" target="_blank"><img src="img/100273256482.jpg" loading="lazy" alt="美的熊墩墩Pro600L法式四开门冰箱超薄零嵌入式双系统2.0除菌一级能效超大容量BCD-600WUFIPZM(E)"></a>
           <span class="tag sales">月销 77万</span>
+          <span class="tag qty">销量 115</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1126,6 +1218,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100371405836.html" target="_blank"><img src="img/100371405836.jpg" loading="lazy" alt="美的安睡系列餐边柜427L十字门45厘米薄嵌左餐右厨三循环新国标一级能效以旧换新MR-449WUSJPGZ"></a>
           <span class="tag sales">月销 24万</span>
+          <span class="tag qty">销量 42</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1141,6 +1234,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100197227204.html" target="_blank"><img src="img/100197227204.jpg" loading="lazy" alt="美的安睡系列餐边柜427L十字门45厘米薄嵌左餐右厨三循环一级能效无霜以旧换新BCD-427WUSGPZM国家补贴"></a>
           <span class="tag sales">月销 23万</span>
+          <span class="tag qty">销量 37</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1156,6 +1250,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100247637713.html" target="_blank"><img src="img/100247637713.jpg" loading="lazy" alt="美的小冰狗530法式多门冰箱502L超薄嵌入双系统2.0净味除菌一级大容量2026年新款MR-530WUFPZE国家补贴"></a>
           <span class="tag sales">月销 15万</span>
+          <span class="tag qty">销量 27</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1171,6 +1266,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100330444184.html" target="_blank"><img src="img/100330444184.jpg" loading="lazy" alt="美的小冰狗530十字四开门冰箱502L超薄零嵌入式双系统2.0双主动净味除菌一级能效大容量MR-530WUSPZE白"></a>
           <span class="tag sales">月销 10万</span>
+          <span class="tag qty">销量 20</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1186,6 +1282,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100341789336.html" target="_blank"><img src="img/100341789336.jpg" loading="lazy" alt="美的熊墩墩600标准版法式多门冰箱超薄零嵌入式双系统净味除菌一级能效超大容量MR-628WUFPZE白"></a>
           <span class="tag sales">月销 7.7万</span>
+          <span class="tag qty">销量 12</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1201,6 +1298,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100256099527.html" target="_blank"><img src="img/100256099527.jpg" loading="lazy" alt="美的熊墩墩山海633十字门冰箱603L超薄零嵌双系统2.0净味制冰超大容量一级能效国家补贴MR-633WUSIPZE"></a>
           <span class="tag sales">月销 26万</span>
+          <span class="tag qty">销量 33</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1216,6 +1314,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100167374059.html" target="_blank"><img src="img/100167374059.jpg" loading="lazy" alt="美的熊墩墩603L十字门冰箱超薄零嵌入式双系统2.0超大容量以旧换新白色BCD-603WUSPZM(E)国家补贴"></a>
           <span class="tag sales">月销 14万</span>
+          <span class="tag qty">销量 21</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1231,6 +1330,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100349000320.html" target="_blank"><img src="img/100349000320.jpg" loading="lazy" alt="统帅出品统帅悦享系列230L三门家用冰箱小型直冷租房三开门一级能效国家补贴LC3-230S901【2026新款】"></a>
           <span class="tag sales">月销 443万</span>
+          <span class="tag qty">销量 4.5k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1246,6 +1346,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100346090186.html" target="_blank"><img src="img/100346090186.jpg" loading="lazy" alt="海尔「真省电」225L三门家用小户型电冰箱2026新款一级能效节能软冷冻变温HC3-225LHC3E0S9国家补贴"></a>
           <span class="tag sales">月销 416万</span>
+          <span class="tag qty">销量 3.9k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1261,6 +1362,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100352209244.html" target="_blank"><img src="img/100352209244.jpg" loading="lazy" alt="统帅出品统帅悦享系列185L两门家用冰箱小型直冷租房双开门一级能效国家补贴LC2-186S901【2026新款】"></a>
           <span class="tag sales">月销 227万</span>
+          <span class="tag qty">销量 2.6k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1276,6 +1378,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100222087831.html" target="_blank"><img src="img/100222087831.jpg" loading="lazy" alt="海尔「一级能效风冷无霜」165L两门家用小户型冰箱真省电抗菌净味灰色HC2-165WGHC2E9S9国家补贴"></a>
           <span class="tag sales">月销 216万</span>
+          <span class="tag qty">销量 2.2k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1291,6 +1394,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100016340200.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 205万</span>
+          <span class="tag qty">销量 2.7k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1306,6 +1410,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100346010166.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 203万</span>
+          <span class="tag qty">销量 2.2k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1321,6 +1426,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100208089779.html" target="_blank"><img src="img/100208089779.jpg" loading="lazy" alt="海尔「一级能效风冷无霜」165L两门家用小户型冰箱真省电抗菌净味白色HC2-165WGHC2E9WV国家补贴"></a>
           <span class="tag sales">月销 165万</span>
+          <span class="tag qty">销量 1.6k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1336,6 +1442,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100015521756.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 79万</span>
+          <span class="tag qty">销量 1.1k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1351,6 +1458,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100109995264.html" target="_blank"><img src="img/100109995264.jpg" loading="lazy" alt="海尔「真省电」217L三门家用小户型冰箱抗菌净味一级能效风冷无霜星辉银BCD-217WGHC3E9S9国家补贴"></a>
           <span class="tag sales">月销 470万</span>
+          <span class="tag qty">销量 3.5k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1366,6 +1474,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100210638040.html" target="_blank"><img src="img/100210638040.jpg" loading="lazy" alt="海尔「真省电」310L三门冰箱抗菌净味一级能效风冷无霜BCD-310WGHD3E7WV(银)国家补贴"></a>
           <span class="tag sales">月销 326万</span>
+          <span class="tag qty">销量 1.7k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1381,6 +1490,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100177332637.html" target="_blank"><img src="img/100177332637.jpg" loading="lazy" alt="海尔出品统帅悦享系列251L三门小户型家用电冰箱变频净味一级能效风冷无霜LC3-258WS9以旧换新国家补贴"></a>
           <span class="tag sales">月销 271万</span>
+          <span class="tag qty">销量 1.9k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1396,6 +1506,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100164436731.html" target="_blank"><img src="img/100164436731.jpg" loading="lazy" alt="海尔「真省电」251L三门家用小户型冰箱抗菌净味一级能效风冷无霜星辉银BCD-251WGHC3E7WV(银)国家补贴"></a>
           <span class="tag sales">月销 215万</span>
+          <span class="tag qty">销量 1.3k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1411,6 +1522,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100249542301.html" target="_blank"><img src="img/100249542301.jpg" loading="lazy" alt="海尔「家宴系列」346L法式多门家用冰箱2026新款风冷无霜一级变温抗菌净味BCD-346WLHFD9DH9U1国家补贴"></a>
           <span class="tag sales">月销 200万</span>
+          <span class="tag qty">销量 903</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1426,6 +1538,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100145529388.html" target="_blank"><img src="img/100145529388.jpg" loading="lazy" alt="海尔「家宴系列」539L对开门冰箱黑金净化一级能效风冷无霜大容量抗菌BCD-539WGHSSEDH9国家补贴"></a>
           <span class="tag sales">月销 188万</span>
+          <span class="tag qty">销量 920</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1441,6 +1554,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100346061670.html" target="_blank"><img src="img/100346061670.jpg" loading="lazy" alt="海尔「真省电」200L三门家用小户型冰箱2026新款一级能效风冷无霜抗菌节能HC3-200WGHC2E9S9国家补贴"></a>
           <span class="tag sales">月销 140万</span>
+          <span class="tag qty">销量 1.1k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1456,6 +1570,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100292550928.html" target="_blank"><img src="img/100292550928.jpg" loading="lazy" alt="海尔「真省电」285L两门家用小户型冰箱一级能效风冷无霜左右开门可调灰色BCD-285WGHC2DES9国家补贴"></a>
           <span class="tag sales">月销 139万</span>
+          <span class="tag qty">销量 828</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1471,6 +1586,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100051954946.html" target="_blank"><img src="img/100051954946.jpg" loading="lazy" alt="海尔出品统帅618L对开双开门大电冰箱家用大容量一级能效风冷无霜BCD-618WGLSSEDW9以旧换新国家补贴"></a>
           <span class="tag sales">月销 100万</span>
+          <span class="tag qty">销量 516</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1486,6 +1602,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100210991502.html" target="_blank"><img src="img/100210991502.jpg" loading="lazy" alt="海尔「真省电」193L两门家用小户型冰箱新国标一级能效风冷无霜抗菌净味变温BCD-193WGHC2E7WV国家补贴【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 79万</span>
+          <span class="tag qty">销量 639</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1501,6 +1618,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100155796169.html" target="_blank"><img src="img/100155796169.jpg" loading="lazy" alt="海尔（Haier）冰箱出品统帅538L对开门冰箱家用大容量一级能效风冷无霜LSS-560WL9以旧换新国家补贴15%【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 65万</span>
+          <span class="tag qty">销量 361</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1516,6 +1634,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100265635605.html" target="_blank"><img src="img/100265635605.jpg" loading="lazy" alt="海尔冰箱出品统帅悦享系列282L三门小型家用复古变频电冰箱一级能效风冷无霜LC3-290WL9冰箱2026新款"></a>
           <span class="tag sales">月销 38万</span>
+          <span class="tag qty">销量 271</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1531,6 +1650,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100037217877.html" target="_blank"><img src="img/100037217877.jpg" loading="lazy" alt="海尔盛宴618L对开门冰箱黑金净化新国标一级能效省电家用风冷无霜超大容量BCD-618WGHSSEDBL国家补贴"></a>
           <span class="tag sales">月销 583万</span>
+          <span class="tag qty">销量 2.4k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1546,6 +1666,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100038697742.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 470万</span>
+          <span class="tag qty">销量 1.9k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1561,6 +1682,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100120810289.html" target="_blank"><img src="img/100120810289.jpg" loading="lazy" alt="海尔「家宴系列」539L十字门母婴冰箱黑金净化抗菌一级变温风冷无霜大容量BCD-539WGHTDEDH9U1国家补贴"></a>
           <span class="tag sales">月销 391万</span>
+          <span class="tag qty">销量 1.4k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1576,6 +1698,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100312805854.html" target="_blank"><img src="img/100312805854.jpg" loading="lazy" alt="海尔「465超薄升级款」501L十字门母婴冰箱一级能效风冷无霜抗菌净味超薄BCD-501WGHTDEDH9U1国家补贴"></a>
           <span class="tag sales">月销 259万</span>
+          <span class="tag qty">销量 957</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1591,6 +1714,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100145529404.html" target="_blank"><img src="img/100145529404.jpg" loading="lazy" alt="海尔「小红花系列」418L十字门母婴冰箱594mm专业超薄零嵌BCD-418WGHTDB9S9U1国家补贴"></a>
           <span class="tag sales">月销 201万</span>
+          <span class="tag qty">销量 675</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1606,6 +1730,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100259525111.html" target="_blank"><img src="img/100259525111.jpg" loading="lazy" alt="海尔「小红花系列」456L法式多门电冰箱2026新款抗菌双净化超薄风冷无霜BCD-456WGHFDEDB7U1国家补贴"></a>
           <span class="tag sales">月销 188万</span>
+          <span class="tag qty">销量 778</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1621,6 +1746,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100208089787.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 184万</span>
+          <span class="tag qty">销量 776</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1636,6 +1762,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100113806013.html" target="_blank"><img src="img/100113806013.jpg" loading="lazy" alt="海尔「家宴系列」531L十字门母婴冰箱干湿分储制冰一级抗菌风冷大容量灰BCD-531WGHTD59SHU1国家补贴"></a>
           <span class="tag sales">月销 125万</span>
+          <span class="tag qty">销量 485</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1651,6 +1778,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100346328916.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 120万</span>
+          <span class="tag qty">销量 527</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1666,6 +1794,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100276454940.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 91万</span>
+          <span class="tag qty">销量 326</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1681,6 +1810,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100252346997.html" target="_blank"><img src="img/100252346997.jpg" loading="lazy" alt="海尔（Haier）冰箱出品统帅懒人系列505L法式多门电冰箱大容量一级能效双净化LF4-510WG9U1国补【2026年新款】"></a>
           <span class="tag sales">月销 53万</span>
+          <span class="tag qty">销量 192</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1696,6 +1826,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100277761086.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 316万</span>
+          <span class="tag qty">销量 835</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1711,6 +1842,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100199055199.html" target="_blank"><img src="img/100199055199.jpg" loading="lazy" alt="海尔「小红花系列」550L法式多门母婴冰箱双系统双净化0串味除菌变温BCD-550WGHFDC9GYU1国家补贴"></a>
           <span class="tag sales">月销 312万</span>
+          <span class="tag qty">销量 838</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1726,6 +1858,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100241577285.html" target="_blank"><img src="img/100241577285.jpg" loading="lazy" alt="海尔小红花「539升级款」545升十字门冰箱冷藏冷冻双净化三档变温一级节能BCD-545WGHTDEDB7U1国家补贴"></a>
           <span class="tag sales">月销 180万</span>
+          <span class="tag qty">销量 544</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1741,6 +1874,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100065933207.html" target="_blank"><img src="img/100065933207.jpg" loading="lazy" alt="海尔盛宴630L对开门冰箱干湿分储新国标一级能效风冷变频超大容量灰色BCD-630WGHSS95SMU1国家补贴"></a>
           <span class="tag sales">月销 133万</span>
+          <span class="tag qty">销量 368</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1756,6 +1890,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100252188423.html" target="_blank"><img src="img/100252188423.jpg" loading="lazy" alt="海尔「小红花」【550白色款】549L法式多门家用冰箱双系统双净化超薄制冰BCD-549WGHFDC9WFU1国家补贴"></a>
           <span class="tag sales">月销 128万</span>
+          <span class="tag qty">销量 339</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1771,6 +1906,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100276454938.html" target="_blank"><img src="img/100276454938.jpg" loading="lazy" alt="海尔山茶花「485升级」510L法式多门家用冰箱全空间保鲜超薄零嵌除菌净味BCD-510WGHFD1BWFU1国家补贴"></a>
           <span class="tag sales">月销 124万</span>
+          <span class="tag qty">销量 276</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1786,6 +1922,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100208089785.html" target="_blank"><img src="img/100208089785.jpg" loading="lazy" alt="海尔「山茶花2.0」501L十字门冰箱双系统双净化超薄零嵌一级能效风冷BCD-501WGHTDC4FBU1国家补贴"></a>
           <span class="tag sales">月销 83万</span>
+          <span class="tag qty">销量 194</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1801,6 +1938,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100241577273.html" target="_blank"><img src="img/100241577273.jpg" loading="lazy" alt="海尔「小红花系列」501L法式多门冰箱双系统双净化594超薄机身一级能效BCD-501WGHFDCDB7U1国家补贴【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 70万</span>
+          <span class="tag qty">销量 204</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1816,6 +1954,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100326637598.html" target="_blank"><img src="img/100326637598.jpg" loading="lazy" alt="统帅（Leader）海尔出品懒人冰立得500L法式复古冰箱10分钟自动制冰双系统超薄嵌入BCD-500WLLFDG9L9U1国家补贴"></a>
           <span class="tag sales">月销 69万</span>
+          <span class="tag qty">销量 187</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1831,6 +1970,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100198754650.html" target="_blank"><img src="img/100198754650.jpg" loading="lazy" alt="海尔「小红花系列」412L法式多门母婴冰箱594mm专业超薄零嵌BCD-412WGHFDB5GYU1国家补贴"></a>
           <span class="tag sales">月销 58万</span>
+          <span class="tag qty">销量 152</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1846,6 +1986,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100144211448.html" target="_blank"><img src="img/100144211448.jpg" loading="lazy" alt="海尔小红花516L十字门母婴冰箱594mm超薄零嵌除菌净味降农残防霉菌变温BCD-516WGHTDB9GPU1国家补贴"></a>
           <span class="tag sales">月销 28万</span>
+          <span class="tag qty">销量 63</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1861,6 +2002,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100329267972.html" target="_blank"><img src="img/100329267972.jpg" loading="lazy" alt="海尔（Haier）出品统帅懒人500L十字四开门冰箱制冰超薄小红花双系统BCD-500WGLTDGDS9U1国家补贴【2026年新款】"></a>
           <span class="tag sales">月销 13万</span>
+          <span class="tag qty">销量 33</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1876,6 +2018,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100246744403.html" target="_blank"><img src="img/100246744403.jpg" loading="lazy" alt="海尔（Haier）出品统帅懒人500L十字四开门冰箱超薄零嵌入自动制冰山茶花双系统BCD-500WGLTDG4L9U1国家补贴"></a>
           <span class="tag sales">月销 12万</span>
+          <span class="tag qty">销量 29</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1891,6 +2034,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100234405643.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 139万</span>
+          <span class="tag qty">销量 292</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1906,6 +2050,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100346024450.html" target="_blank"><img src="img/100346024450.jpg" loading="lazy" alt="海尔「山茶花2.0」501L十字门冰箱双系统双净化0串味99.99%除菌变温空间BCD-501WGHTDC4FSU1国家补贴【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 88万</span>
+          <span class="tag qty">销量 203</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1921,6 +2066,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100259479749.html" target="_blank"><img src="img/100259479749.jpg" loading="lazy" alt="海尔「云溪系列」502L十字门冰箱全空间保鲜制冰双系统超薄零嵌BCD-502WGHTD1CWLU1国家补贴"></a>
           <span class="tag sales">月销 88万</span>
+          <span class="tag qty">销量 184</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1936,6 +2082,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100328867446.html" target="_blank"><img src="img/100328867446.jpg" loading="lazy" alt="海尔「山茶花机皇2.0Pro」502L法式多门冰箱自动制冰双系统双净化超薄零嵌BCD-502WGHFDGCFSU1国家补贴"></a>
           <span class="tag sales">月销 62万</span>
+          <span class="tag qty">销量 106</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1951,6 +2098,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100339636316.html" target="_blank"><img src="img/100339636316.jpg" loading="lazy" alt="海尔「山茶花Pro」机皇550L十字门冰箱双系统双净化0串味超薄零嵌除菌BCD-550WGHTDBCFSU1国家补贴"></a>
           <span class="tag sales">月销 44万</span>
+          <span class="tag qty">销量 82</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1966,6 +2114,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100145529386.html" target="_blank"><img src="img/100145529386.jpg" loading="lazy" alt="海尔「麦浪」512L法式多门冰箱全空间保鲜超薄零嵌一级能效大容量白色BCD-512WGHMD1BWLU1国家补贴"></a>
           <span class="tag sales">月销 34万</span>
+          <span class="tag qty">销量 60</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1981,6 +2130,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100208089783.html" target="_blank"><img src="img/100208089783.jpg" loading="lazy" alt="海尔「云溪系列」502L十字门冰箱双系统双擎恒鲜舱全空间超薄零嵌BCD-502WGHTD1CYXU1国家补贴【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 80万</span>
+          <span class="tag qty">销量 161</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -1996,6 +2146,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100247586935.html" target="_blank"><img src="img/100247586935.jpg" loading="lazy" alt="海尔【大海鲸系列】620L法式冰箱全空间保鲜新国标一级能效超薄零嵌双系统BCD-620WGHFD1BRBU1国家补贴"></a>
           <span class="tag sales">月销 67万</span>
+          <span class="tag qty">销量 83</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2011,6 +2162,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100198170140.html" target="_blank"><img src="img/100198170140.jpg" loading="lazy" alt="海尔【年度机皇】麦浪512Ultra+法式五门母婴冰箱全空间保鲜超薄自动制冰BCD-512WGHMDBGVSU1国家补贴【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 44万</span>
+          <span class="tag qty">销量 62</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2026,6 +2178,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100278483546.html" target="_blank"><img src="img/100278483546.jpg" loading="lazy" alt="容声215L三门小冰箱1-2人小型家用出租房宿舍中门软冷冻节能省电低音运行以旧换新618BCD-215E10RNLAD"></a>
           <span class="tag sales">月销 150万</span>
+          <span class="tag qty">销量 1.8k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2041,6 +2194,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100278483544.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 107万</span>
+          <span class="tag qty">销量 1.5k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2056,6 +2210,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100165615841.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 84万</span>
+          <span class="tag qty">销量 906</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2071,6 +2226,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100242732645.html" target="_blank"><img src="img/100242732645.png" loading="lazy" alt="容声95L单门小冰箱家用一级能效小户型节能超薄保鲜出租房宿舍迷你以旧换新BC-95D12"></a>
           <span class="tag sales">月销 30万</span>
+          <span class="tag qty">销量 508</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2086,6 +2242,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100035753586.html" target="_blank"><img src="img/100035753586.jpg" loading="lazy" alt="容声465L十字门电冰箱超薄一级能效风冷无霜双变频节能净味四开门家用以旧换新国家补贴BCD-465WD18FP"></a>
           <span class="tag sales">月销 505万</span>
+          <span class="tag qty">销量 2.6k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2101,6 +2258,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100036999679.html" target="_blank"><img src="img/100036999679.jpg" loading="lazy" alt="容声609L双开门电冰箱超大容量一级能效风冷无霜双变频节能家用对开门以旧换新国家补贴BCD-609WD11HP"></a>
           <span class="tag sales">月销 425万</span>
+          <span class="tag qty">销量 2.1k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2116,6 +2274,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100120152551.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 288万</span>
+          <span class="tag qty">销量 2.5k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2131,6 +2290,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100076106275.html" target="_blank"><img src="img/100076106275.jpg" loading="lazy" alt="容声520L十字门冰箱大容量超薄一级能效风冷无霜双变频净味四开门家用以旧换新国家补贴BCD-520WD12FP"></a>
           <span class="tag sales">月销 268万</span>
+          <span class="tag qty">销量 1.2k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2146,6 +2306,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100326821824.html" target="_blank"><img src="img/100326821824.jpg" loading="lazy" alt="容声261L三门小电冰箱2026新款家用新国标一级能效风冷无霜变频出租房国家补贴BCD-261D20RNLBD"></a>
           <span class="tag sales">月销 230万</span>
+          <span class="tag qty">销量 1.6k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2161,6 +2322,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100138874432.html" target="_blank"><img src="img/100138874432.jpg" loading="lazy" alt="容声547L双开门冰箱大容量超薄一级能效风冷无霜双变频节能净味对开门以旧换新国家补贴BCD-547WD12HP"></a>
           <span class="tag sales">月销 209万</span>
+          <span class="tag qty">销量 1.4k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2176,6 +2338,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100165413100.html" target="_blank"><img src="img/100165413100.jpg" loading="lazy" alt="容声331L法式多门冰箱小户型超薄一级能效风冷无霜双变频节能家用抗菌以旧换新国家补贴BCD-331WD11MP"></a>
           <span class="tag sales">月销 145万</span>
+          <span class="tag qty">销量 775</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2191,6 +2354,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100237588985.html" target="_blank"><img src="img/100237588985.jpg" loading="lazy" alt="容声273L三开门小冰箱小型家用超薄风冷无霜新国标一级能效变频小户型租房国家补贴BCD-273E20RNLAJ【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 76万</span>
+          <span class="tag qty">销量 460</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2206,6 +2370,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100158186749.html" target="_blank"><img src="img/100158186749.jpg" loading="lazy" alt="容声325L法式多门电冰箱小户型超薄一级能效风冷无霜变频节能净味家用以旧换新国家补贴BCD-325WD18MP【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 47万</span>
+          <span class="tag qty">销量 251</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2221,6 +2386,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100138874416.html" target="_blank"><img src="img/100138874416.jpg" loading="lazy" alt="容声513pro十字门电冰箱双系统双循环除菌净味一级能效风冷无霜大容量四开门国家补贴BCD-513WD15FPA"></a>
           <span class="tag sales">月销 230万</span>
+          <span class="tag qty">销量 825</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2236,6 +2402,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100148402720.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 155万</span>
+          <span class="tag qty">销量 630</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2251,6 +2418,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100275899527.html" target="_blank"><img src="img/100275899527.jpg" loading="lazy" alt="容声550L十字门冰箱【513pro升级款】双系统双循环主动净味大容量新一级无霜国家补贴SR-550Q30CNLBJ灰"></a>
           <span class="tag sales">月销 127万</span>
+          <span class="tag qty">销量 421</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2266,6 +2434,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100326203720.html" target="_blank"><img src="img/100326203720.jpg" loading="lazy" alt="容声大方糕552L法式多门冰箱新一级能效大容量双系统底部散热零嵌入式国家补贴BCD-552Q30FQLBD星澜"></a>
           <span class="tag sales">月销 91万</span>
+          <span class="tag qty">销量 262</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2281,6 +2450,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100244458247.html" target="_blank"><img src="img/100244458247.jpg" loading="lazy" alt="容声大方糕552L十字门冰箱新一级能效大容量双系统底部散热超薄嵌入国家补贴BCD-552Q30CQLBD星澜【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 68万</span>
+          <span class="tag qty">销量 198</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2296,6 +2466,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100148402730.html" target="_blank"><img src="img/100148402730.jpg" loading="lazy" alt="容声501pro十字门冰箱IDP主动除菌净味双系统双循环一级能效风冷无霜大容量国家补贴BCD-501WD3FPZ【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 46万</span>
+          <span class="tag qty">销量 177</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2311,6 +2482,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100148402718.html" target="_blank"><img src="img/100148402718.jpg" loading="lazy" alt="容声IDP净味501L法式冰箱pro款主动除菌双系统一级能效风冷无霜BCD-501WD3MPZ国家补贴【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 44万</span>
+          <span class="tag qty">销量 155</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2326,6 +2498,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100376335628.html" target="_blank"><img src="img/100376335628.jpg" loading="lazy" alt="容声小冰熊515L法式多门冰箱超薄深冻大容量一级能效风冷无霜变频2026新款BCD-515D30FNLBD国家补贴白"></a>
           <span class="tag sales">月销 5.1万</span>
+          <span class="tag qty">销量 17</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2341,6 +2514,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100193636077.html" target="_blank"><img src="img/100193636077.jpg" loading="lazy" alt="容声方糖515L法式多门冰箱双系统双循环超薄零嵌入式除菌一级能效风冷无霜国家补贴BCD-515P60FZMAD白"></a>
           <span class="tag sales">月销 169万</span>
+          <span class="tag qty">销量 377</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2356,6 +2530,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100154667283.html" target="_blank"><img src="img/100154667283.jpg" loading="lazy" alt="容声方糖515L法式多门冰箱双系统双循环超薄零嵌入式除菌一级能效风冷无霜国家补贴BCD-515P60FZMAD灰"></a>
           <span class="tag sales">月销 101万</span>
+          <span class="tag qty">销量 222</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2371,6 +2546,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100211514833.html" target="_blank"><img src="img/100211514833.jpg" loading="lazy" alt="容声战神572L十字四开门冰箱大容量双净双系统超薄零嵌入式一级能效国家补贴BCD-572N40CQLAD灰"></a>
           <span class="tag sales">月销 61万</span>
+          <span class="tag qty">销量 153</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2386,6 +2562,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100195902998.html" target="_blank"><img src="img/100195902998.jpg" loading="lazy" alt="容声方糖505L十字门冰箱双系统双循环超薄零嵌入式一级能效风冷无霜大容量国家补贴BCD-505P60CZMAD灰【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 59万</span>
+          <span class="tag qty">销量 147</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2401,6 +2578,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100286077644.html" target="_blank"><img src="img/100286077644.jpg" loading="lazy" alt="容声战神573L法式多门冰箱大容量双净双系统超薄零嵌入式风冷无霜一级能效国家补贴BCD-573N40FQLAD灰"></a>
           <span class="tag sales">月销 55万</span>
+          <span class="tag qty">销量 139</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2416,6 +2594,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100337421792.html" target="_blank"><img src="img/100337421792.jpg" loading="lazy" alt="容声大方糕552L十字门冰箱新一级能效大容量双系统底部散热超薄嵌入国家补贴BCD-552Q30CQLBD白【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 54万</span>
+          <span class="tag qty">销量 153</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2431,6 +2610,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100337421760.html" target="_blank"><img src="img/100337421760.jpg" loading="lazy" alt="容声大方糕552L法式多门冰箱新一级能效大容量双系统底部散热零嵌入式换新国家补贴BCD-552Q30FQLBD白"></a>
           <span class="tag sales">月销 45万</span>
+          <span class="tag qty">销量 125</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2446,6 +2626,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100239174687.html" target="_blank"><img src="img/100239174687.jpg" loading="lazy" alt="容声战神573L法式多门冰箱大容量双净双系统超薄零嵌入式风冷无霜一级能效国家补贴BCD-573N40FQLAD白"></a>
           <span class="tag sales">月销 29万</span>
+          <span class="tag qty">销量 72</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2461,6 +2642,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100161792489.html" target="_blank"><img src="img/100161792489.jpg" loading="lazy" alt="容声方糖机皇515L法式多门冰箱双净双系统超薄零嵌入一级能效无霜自动制冰国家补贴BCD-515P60FZNAD白"></a>
           <span class="tag sales">月销 97万</span>
+          <span class="tag qty">销量 173</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2476,6 +2658,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100252868317.html" target="_blank"><img src="img/100252868317.jpg" loading="lazy" alt="容声大冰象603L十字门冰箱超大容量双净双系统超薄嵌入式新一级能效国家补贴BCD-603Q50CZLBD白世界杯"></a>
           <span class="tag sales">月销 33万</span>
+          <span class="tag qty">销量 47</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2491,6 +2674,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100344885670.html" target="_blank"><img src="img/100344885670.jpg" loading="lazy" alt="容声方糖机皇510L(2.0)法式冰箱双净双系统零嵌入式自动制冰一级能效国家补贴BCD-510Q60FZNBD"></a>
           <span class="tag sales">月销 27万</span>
+          <span class="tag qty">销量 38</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2506,6 +2690,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100252868319.html" target="_blank"><img src="img/100252868319.jpg" loading="lazy" alt="容声大冰象603L十字门冰箱超大容量双净双系统超薄嵌入式新一级能效国家补贴BCD-603Q50CZLBD灰世界杯"></a>
           <span class="tag sales">月销 21万</span>
+          <span class="tag qty">销量 32</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2521,6 +2706,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100252868345.html" target="_blank"><img src="img/100252868345.jpg" loading="lazy" alt="容声大冰象603L法式多门冰箱超大容量双净双系统超薄零嵌入式一级能效国家补贴BCD-603Q50FZLBJ世界杯"></a>
           <span class="tag sales">月销 156万</span>
+          <span class="tag qty">销量 280</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2536,6 +2722,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100328374256.html" target="_blank"><img src="img/100328374256.jpg" loading="lazy" alt="容声大冰象机皇605L法式冰箱大容量双净双系统嵌入式一级能效自动制冰国家补贴BCD-605Q60FZNBD世界杯"></a>
           <span class="tag sales">月销 44万</span>
+          <span class="tag qty">销量 52</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2551,6 +2738,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100024641402.html" target="_blank"><img src="img/100024641402.jpg" loading="lazy" alt="美的325L法式四开门冰箱小户型超薄风冷无霜一级能效变频节能净味以旧换新BCD-325WFPM(E)国家补贴"></a>
           <span class="tag sales">月销 144万</span>
+          <span class="tag qty">销量 690</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2566,6 +2754,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100100537834.html" target="_blank"><img src="img/100100537834.jpg" loading="lazy" alt="美的324L法式多门冰箱小户型超薄风冷无霜一级能效变频节能净味以旧换新白色MR-340WFPE国家补贴"></a>
           <span class="tag sales">月销 33万</span>
+          <span class="tag qty">销量 152</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2581,6 +2770,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100097259470.html" target="_blank"><img src="img/100097259470.jpg" loading="lazy" alt="美的536法式四开门冰箱511L大容量超薄嵌入式双系统2.0风冷无霜以旧换新白MR-536WUFPZE国家补贴"></a>
           <span class="tag sales">月销 77万</span>
+          <span class="tag qty">销量 223</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2596,6 +2786,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100064527543.html" target="_blank"><img src="img/100064527543.jpg" loading="lazy" alt="美的506L法式四开门冰箱双系统双循环一级能效风冷无霜大容量以旧换新苍穹灰MR-532WFPZE国家补贴"></a>
           <span class="tag sales">月销 69万</span>
+          <span class="tag qty">销量 237</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2611,6 +2802,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100209336301.html" target="_blank"><img src="img/100209336301.jpg" loading="lazy" alt="美的501L法式多门冰箱超薄大容量一级能效双变频风冷无霜以旧换新BCD-501WFPM(Q)国家补贴"></a>
           <span class="tag sales">月销 52万</span>
+          <span class="tag qty">销量 199</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2626,6 +2818,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100097259466.html" target="_blank"><img src="img/100097259466.jpg" loading="lazy" alt="美的400L法式四开门冰箱超薄零嵌入式小户型一级能效风冷无霜节能变频以旧换新白色MR-418WFPE国家补贴"></a>
           <span class="tag sales">月销 48万</span>
+          <span class="tag qty">销量 162</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2641,6 +2834,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100146301626.html" target="_blank"><img src="img/100146301626.jpg" loading="lazy" alt="美的506L法式四开门冰箱双系统双循环一级能效风冷无霜大容量以旧换新谷雨灰MR-532WFPZE国家补贴"></a>
           <span class="tag sales">月销 17万</span>
+          <span class="tag qty">销量 60</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2656,6 +2850,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100250022854.html" target="_blank"><img src="img/100250022854.jpg" loading="lazy" alt="美的503L法式多门冰箱超薄零嵌入式一级能效风冷无霜变频大容量以旧换新白色BCD-503WUFPZM(E)国家补贴"></a>
           <span class="tag sales">月销 17万</span>
+          <span class="tag qty">销量 51</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2671,6 +2866,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100108283570.html" target="_blank"><img src="img/100108283570.jpg" loading="lazy" alt="美的446L法式多门冰箱超薄零嵌入式一级能效风冷无霜变频节能以旧换新白色MR-468WUFPZE国家补贴"></a>
           <span class="tag sales">月销 12万</span>
+          <span class="tag qty">销量 37</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2686,6 +2882,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100371431926.html" target="_blank"><img src="img/100371431926.jpg" loading="lazy" alt="美的508L法式四开门冰箱新国标一级能效双系统双循环除菌净味无霜大容量2026新款MR-508WFJDPZE星尘黛"></a>
           <span class="tag sales">月销 96万</span>
+          <span class="tag qty">销量 301</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2701,6 +2898,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100205282178.html" target="_blank"><img src="img/100205282178.jpg" loading="lazy" alt="美的安睡M60小机皇520L法式四开门冰箱双系统2.0超薄零嵌入式一级能效无霜白BCD-520WUFPZM(E)国家补贴"></a>
           <span class="tag sales">月销 79万</span>
+          <span class="tag qty">销量 175</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2716,6 +2914,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100339173806.html" target="_blank"><img src="img/100339173806.jpg" loading="lazy" alt="美的可爱多508Pro法式四开门冰箱超薄零嵌入式双系统净味除菌一级能效大容量2026新品MR-508WUFPZE白色"></a>
           <span class="tag sales">月销 54万</span>
+          <span class="tag qty">销量 129</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2731,6 +2930,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100257560945.html" target="_blank"><img src="img/100257560945.jpg" loading="lazy" alt="美的576L法式四开门冰箱双系统循环净味除菌一级能效风冷无霜大容量BCD-576WFPZM(E)白"></a>
           <span class="tag sales">月销 41万</span>
+          <span class="tag qty">销量 121</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2746,6 +2946,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100197227202.html" target="_blank"><img src="img/100197227202.jpg" loading="lazy" alt="美的真香508L法式多门冰箱超薄零嵌入式双系统一级能效大容量以旧换新白色BCD-508WUFPZM(E)国家补贴"></a>
           <span class="tag sales">月销 27万</span>
+          <span class="tag qty">销量 74</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2761,6 +2962,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100055656149.html" target="_blank"><img src="img/100055656149.jpg" loading="lazy" alt="美的508L法式四开门冰箱双系统双循环一级能效除菌净味风冷大容量BCD-508WTPZM(E)白色国家补贴"></a>
           <span class="tag sales">月销 23万</span>
+          <span class="tag qty">销量 59</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2776,6 +2978,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100007351130.html" target="_blank"><img src="img/100007351130.jpg" loading="lazy" alt="美的508L法式四开门冰箱双系统双循环一级能效除菌净味风冷无霜大容量BCD-508WTPZM(E)灰国家补贴"></a>
           <span class="tag sales">月销 20万</span>
+          <span class="tag qty">销量 55</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2791,6 +2994,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100212486697.html" target="_blank"><img src="img/100212486697.jpg" loading="lazy" alt="美的558L法式多门冰箱超薄嵌入式一级能效风冷无霜除菌大容量制冰以旧换新BCD-558WUFIPZM(E)国家补贴"></a>
           <span class="tag sales">月销 20万</span>
+          <span class="tag qty">销量 43</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2806,6 +3010,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100371430768.html" target="_blank"><img src="img/100371430768.jpg" loading="lazy" alt="美的508L法式四开门冰箱新国标一级能效双系统双循环除菌净味风冷无霜大容量2026新款MR-508WFJDPZE白"></a>
           <span class="tag sales">月销 16万</span>
+          <span class="tag qty">销量 48</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2821,6 +3026,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100283007435.html" target="_blank"><img src="img/100283007435.jpg" loading="lazy" alt="美的400L法式四开门冰箱新国标一级能效超薄零嵌入式小户型除菌净味无霜2026新款MR-421WUFJPZEA星尘白"></a>
           <span class="tag sales">月销 14万</span>
+          <span class="tag qty">销量 36</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2836,6 +3042,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100063210422.html" target="_blank"><img src="img/100063210422.jpg" loading="lazy" alt="美的400L法式多门冰箱超薄零嵌入式小户型除菌净味一级能效风冷无霜以旧换新白色MR-421WUFPZE国家补贴"></a>
           <span class="tag sales">月销 3.2万</span>
+          <span class="tag qty">销量 7</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2851,6 +3058,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100121324389.html" target="_blank"><img src="img/100121324389.jpg" loading="lazy" alt="美的448L法式多门冰箱超薄零嵌入式除菌净味一级能效风冷无霜变频节能以旧换新MR-470WUFPZE国家补贴"></a>
           <span class="tag sales">月销 <1万</span>
+          <span class="tag qty">销量 1</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2866,6 +3074,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100113376239.html" target="_blank"><img src="img/100113376239.jpg" loading="lazy" alt="美的M60机皇550法式四开门冰箱523L大容量超薄嵌入式双系统2.0除菌制冰白MR-550WUFIPZE国家补贴"></a>
           <span class="tag sales">月销 74万</span>
+          <span class="tag qty">销量 132</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2881,6 +3090,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100262151142.html" target="_blank"><img src="img/100262151142.jpg" loading="lazy" alt="美的机皇550法式多门冰箱523L大容量制冰超薄嵌入双系统2.0除菌净味海贝黛MR-550WUFIPZE国家补贴【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 45万</span>
+          <span class="tag qty">销量 80</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2896,6 +3106,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100273256482.html" target="_blank"><img src="img/100273256482.jpg" loading="lazy" alt="美的熊墩墩Pro600L法式四开门冰箱超薄零嵌入式双系统2.0除菌一级能效超大容量BCD-600WUFIPZM(E)"></a>
           <span class="tag sales">月销 77万</span>
+          <span class="tag qty">销量 115</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2911,6 +3122,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100247637713.html" target="_blank"><img src="img/100247637713.jpg" loading="lazy" alt="美的小冰狗530法式多门冰箱502L超薄嵌入双系统2.0净味除菌一级大容量2026年新款MR-530WUFPZE国家补贴"></a>
           <span class="tag sales">月销 15万</span>
+          <span class="tag qty">销量 27</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2926,6 +3138,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100341789336.html" target="_blank"><img src="img/100341789336.jpg" loading="lazy" alt="美的熊墩墩600标准版法式多门冰箱超薄零嵌入式双系统净味除菌一级能效超大容量MR-628WUFPZE白"></a>
           <span class="tag sales">月销 7.7万</span>
+          <span class="tag qty">销量 12</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2941,6 +3154,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100249542301.html" target="_blank"><img src="img/100249542301.jpg" loading="lazy" alt="海尔「家宴系列」346L法式多门家用冰箱2026新款风冷无霜一级变温抗菌净味BCD-346WLHFD9DH9U1国家补贴"></a>
           <span class="tag sales">月销 200万</span>
+          <span class="tag qty">销量 903</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2956,6 +3170,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100259525111.html" target="_blank"><img src="img/100259525111.jpg" loading="lazy" alt="海尔「小红花系列」456L法式多门电冰箱2026新款抗菌双净化超薄风冷无霜BCD-456WGHFDEDB7U1国家补贴"></a>
           <span class="tag sales">月销 188万</span>
+          <span class="tag qty">销量 778</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2971,6 +3186,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100252346997.html" target="_blank"><img src="img/100252346997.jpg" loading="lazy" alt="海尔（Haier）冰箱出品统帅懒人系列505L法式多门电冰箱大容量一级能效双净化LF4-510WG9U1国补【2026年新款】"></a>
           <span class="tag sales">月销 53万</span>
+          <span class="tag qty">销量 192</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -2986,6 +3202,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100199055199.html" target="_blank"><img src="img/100199055199.jpg" loading="lazy" alt="海尔「小红花系列」550L法式多门母婴冰箱双系统双净化0串味除菌变温BCD-550WGHFDC9GYU1国家补贴"></a>
           <span class="tag sales">月销 312万</span>
+          <span class="tag qty">销量 838</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3001,6 +3218,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100252188423.html" target="_blank"><img src="img/100252188423.jpg" loading="lazy" alt="海尔「小红花」【550白色款】549L法式多门家用冰箱双系统双净化超薄制冰BCD-549WGHFDC9WFU1国家补贴"></a>
           <span class="tag sales">月销 128万</span>
+          <span class="tag qty">销量 339</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3016,6 +3234,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100276454938.html" target="_blank"><img src="img/100276454938.jpg" loading="lazy" alt="海尔山茶花「485升级」510L法式多门家用冰箱全空间保鲜超薄零嵌除菌净味BCD-510WGHFD1BWFU1国家补贴"></a>
           <span class="tag sales">月销 124万</span>
+          <span class="tag qty">销量 276</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3031,6 +3250,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100241577273.html" target="_blank"><img src="img/100241577273.jpg" loading="lazy" alt="海尔「小红花系列」501L法式多门冰箱双系统双净化594超薄机身一级能效BCD-501WGHFDCDB7U1国家补贴【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 70万</span>
+          <span class="tag qty">销量 204</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3046,6 +3266,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100326637598.html" target="_blank"><img src="img/100326637598.jpg" loading="lazy" alt="统帅（Leader）海尔出品懒人冰立得500L法式复古冰箱10分钟自动制冰双系统超薄嵌入BCD-500WLLFDG9L9U1国家补贴"></a>
           <span class="tag sales">月销 69万</span>
+          <span class="tag qty">销量 187</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3061,6 +3282,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100198754650.html" target="_blank"><img src="img/100198754650.jpg" loading="lazy" alt="海尔「小红花系列」412L法式多门母婴冰箱594mm专业超薄零嵌BCD-412WGHFDB5GYU1国家补贴"></a>
           <span class="tag sales">月销 58万</span>
+          <span class="tag qty">销量 152</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3076,6 +3298,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100234405643.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 139万</span>
+          <span class="tag qty">销量 292</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3091,6 +3314,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100328867446.html" target="_blank"><img src="img/100328867446.jpg" loading="lazy" alt="海尔「山茶花机皇2.0Pro」502L法式多门冰箱自动制冰双系统双净化超薄零嵌BCD-502WGHFDGCFSU1国家补贴"></a>
           <span class="tag sales">月销 62万</span>
+          <span class="tag qty">销量 106</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3106,6 +3330,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100145529386.html" target="_blank"><img src="img/100145529386.jpg" loading="lazy" alt="海尔「麦浪」512L法式多门冰箱全空间保鲜超薄零嵌一级能效大容量白色BCD-512WGHMD1BWLU1国家补贴"></a>
           <span class="tag sales">月销 34万</span>
+          <span class="tag qty">销量 60</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3121,6 +3346,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100247586935.html" target="_blank"><img src="img/100247586935.jpg" loading="lazy" alt="海尔【大海鲸系列】620L法式冰箱全空间保鲜新国标一级能效超薄零嵌双系统BCD-620WGHFD1BRBU1国家补贴"></a>
           <span class="tag sales">月销 67万</span>
+          <span class="tag qty">销量 83</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3136,6 +3362,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100198170140.html" target="_blank"><img src="img/100198170140.jpg" loading="lazy" alt="海尔【年度机皇】麦浪512Ultra+法式五门母婴冰箱全空间保鲜超薄自动制冰BCD-512WGHMDBGVSU1国家补贴【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 44万</span>
+          <span class="tag qty">销量 62</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3151,6 +3378,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100165413100.html" target="_blank"><img src="img/100165413100.jpg" loading="lazy" alt="容声331L法式多门冰箱小户型超薄一级能效风冷无霜双变频节能家用抗菌以旧换新国家补贴BCD-331WD11MP"></a>
           <span class="tag sales">月销 145万</span>
+          <span class="tag qty">销量 775</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3166,6 +3394,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100158186749.html" target="_blank"><img src="img/100158186749.jpg" loading="lazy" alt="容声325L法式多门电冰箱小户型超薄一级能效风冷无霜变频节能净味家用以旧换新国家补贴BCD-325WD18MP【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 47万</span>
+          <span class="tag qty">销量 251</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3181,6 +3410,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100326203720.html" target="_blank"><img src="img/100326203720.jpg" loading="lazy" alt="容声大方糕552L法式多门冰箱新一级能效大容量双系统底部散热零嵌入式国家补贴BCD-552Q30FQLBD星澜"></a>
           <span class="tag sales">月销 91万</span>
+          <span class="tag qty">销量 262</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3196,6 +3426,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100148402718.html" target="_blank"><img src="img/100148402718.jpg" loading="lazy" alt="容声IDP净味501L法式冰箱pro款主动除菌双系统一级能效风冷无霜BCD-501WD3MPZ国家补贴【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 44万</span>
+          <span class="tag qty">销量 155</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3211,6 +3442,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100376335628.html" target="_blank"><img src="img/100376335628.jpg" loading="lazy" alt="容声小冰熊515L法式多门冰箱超薄深冻大容量一级能效风冷无霜变频2026新款BCD-515D30FNLBD国家补贴白"></a>
           <span class="tag sales">月销 5.1万</span>
+          <span class="tag qty">销量 17</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3226,6 +3458,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100193636077.html" target="_blank"><img src="img/100193636077.jpg" loading="lazy" alt="容声方糖515L法式多门冰箱双系统双循环超薄零嵌入式除菌一级能效风冷无霜国家补贴BCD-515P60FZMAD白"></a>
           <span class="tag sales">月销 169万</span>
+          <span class="tag qty">销量 377</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3241,6 +3474,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100154667283.html" target="_blank"><img src="img/100154667283.jpg" loading="lazy" alt="容声方糖515L法式多门冰箱双系统双循环超薄零嵌入式除菌一级能效风冷无霜国家补贴BCD-515P60FZMAD灰"></a>
           <span class="tag sales">月销 101万</span>
+          <span class="tag qty">销量 222</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3256,6 +3490,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100286077644.html" target="_blank"><img src="img/100286077644.jpg" loading="lazy" alt="容声战神573L法式多门冰箱大容量双净双系统超薄零嵌入式风冷无霜一级能效国家补贴BCD-573N40FQLAD灰"></a>
           <span class="tag sales">月销 55万</span>
+          <span class="tag qty">销量 139</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3271,6 +3506,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100337421760.html" target="_blank"><img src="img/100337421760.jpg" loading="lazy" alt="容声大方糕552L法式多门冰箱新一级能效大容量双系统底部散热零嵌入式换新国家补贴BCD-552Q30FQLBD白"></a>
           <span class="tag sales">月销 45万</span>
+          <span class="tag qty">销量 125</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3286,6 +3522,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100239174687.html" target="_blank"><img src="img/100239174687.jpg" loading="lazy" alt="容声战神573L法式多门冰箱大容量双净双系统超薄零嵌入式风冷无霜一级能效国家补贴BCD-573N40FQLAD白"></a>
           <span class="tag sales">月销 29万</span>
+          <span class="tag qty">销量 72</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3301,6 +3538,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100161792489.html" target="_blank"><img src="img/100161792489.jpg" loading="lazy" alt="容声方糖机皇515L法式多门冰箱双净双系统超薄零嵌入一级能效无霜自动制冰国家补贴BCD-515P60FZNAD白"></a>
           <span class="tag sales">月销 97万</span>
+          <span class="tag qty">销量 173</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3316,6 +3554,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100344885670.html" target="_blank"><img src="img/100344885670.jpg" loading="lazy" alt="容声方糖机皇510L(2.0)法式冰箱双净双系统零嵌入式自动制冰一级能效国家补贴BCD-510Q60FZNBD"></a>
           <span class="tag sales">月销 27万</span>
+          <span class="tag qty">销量 38</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3331,6 +3570,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100252868345.html" target="_blank"><img src="img/100252868345.jpg" loading="lazy" alt="容声大冰象603L法式多门冰箱超大容量双净双系统超薄零嵌入式一级能效国家补贴BCD-603Q50FZLBJ世界杯"></a>
           <span class="tag sales">月销 156万</span>
+          <span class="tag qty">销量 280</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3346,6 +3586,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100328374256.html" target="_blank"><img src="img/100328374256.jpg" loading="lazy" alt="容声大冰象机皇605L法式冰箱大容量双净双系统嵌入式一级能效自动制冰国家补贴BCD-605Q60FZNBD世界杯"></a>
           <span class="tag sales">月销 44万</span>
+          <span class="tag qty">销量 52</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3361,6 +3602,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100282981819.html" target="_blank"><img src="img/100282981819.jpg" loading="lazy" alt="美的480L十字门冰箱全空间养鲜抗菌净味新国标一级能效风冷无霜双变频以旧换新MR-497WSPEA"></a>
           <span class="tag sales">月销 122万</span>
+          <span class="tag qty">销量 581</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3376,6 +3618,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100062957294.html" target="_blank"><img src="img/100062957294.jpg" loading="lazy" alt="美的505L十字门冰箱双系统双循环保鲜大容量三档变温一级能效风冷无霜MR-531WSPZE国家补贴"></a>
           <span class="tag sales">月销 121万</span>
+          <span class="tag qty">销量 408</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3391,6 +3634,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100155265995.html" target="_blank"><img src="img/100155265995.jpg" loading="lazy" alt="美的508L十字门冰箱双系统2.0超薄零嵌入式大容量一级能效以旧换新BCD-508WUSPZM(E)国家补贴"></a>
           <span class="tag sales">月销 92万</span>
+          <span class="tag qty">销量 283</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3406,6 +3650,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100135358557.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 90万</span>
+          <span class="tag qty">销量 379</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3421,6 +3666,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100152122005.html" target="_blank"><img src="img/100152122005.jpg" loading="lazy" alt="美的真香系列501L十字门冰箱60厘米超薄大容量一级能效风冷无霜BCD-501WSPM(Q)"></a>
           <span class="tag sales">月销 79万</span>
+          <span class="tag qty">销量 320</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3436,6 +3682,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100149467123.html" target="_blank"><img src="img/100149467123.jpg" loading="lazy" alt="美的605L十字门冰箱超大容量全空间养鲜抗菌净味一级能效风冷无霜双变频以旧换新MR-635WSPZE国家补贴"></a>
           <span class="tag sales">月销 69万</span>
+          <span class="tag qty">销量 204</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3451,6 +3698,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100146301608.html" target="_blank"><img src="img/100146301608.jpg" loading="lazy" alt="美的505L十字门冰箱双系统双循环净化保鲜大容量一级能效风冷无霜谷雨灰以旧换新MR-531WSPZE国家补贴"></a>
           <span class="tag sales">月销 36万</span>
+          <span class="tag qty">销量 122</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3466,6 +3714,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100065762615.html" target="_blank"><img src="img/100065762615.jpg" loading="lazy" alt="美的436L十字门冰箱60厘米超薄零嵌入式全空间养鲜一级能效风冷无霜以旧换新白色MR-457WUSPZE国家补贴"></a>
           <span class="tag sales">月销 32万</span>
+          <span class="tag qty">销量 105</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3481,6 +3730,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100012369805.html" target="_blank"><img src="img/100012369805.jpg" loading="lazy" alt="美的471L十字门冰箱全空间养鲜抗菌净味一级能效风冷无霜双变频以旧换新BCD-471WSPZM(E)国家补贴"></a>
           <span class="tag sales">月销 12万</span>
+          <span class="tag qty">销量 52</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3496,6 +3746,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100282986615.html" target="_blank"><img src="img/100282986615.jpg" loading="lazy" alt="美的真香系列508L十字门冰箱双系统大容量新国标一级能效风冷无霜双变频MR-508WSJDPZE白"></a>
           <span class="tag sales">月销 61万</span>
+          <span class="tag qty">销量 198</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3511,6 +3762,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100337098334.html" target="_blank"><img src="img/100337098334.jpg" loading="lazy" alt="美的可爱多508Pro十字门冰箱503L超薄零嵌双系统2.0净味除菌大容量一级能效补贴MR-508WUSPZE"></a>
           <span class="tag sales">月销 45万</span>
+          <span class="tag qty">销量 114</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3526,6 +3778,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100113376219.html" target="_blank"><img src="img/100113376219.jpg" loading="lazy" alt="美的M60小机皇515升十字门冰箱超薄嵌入式双系统2.0大容量以旧换新MR-541WUSPZE国家补贴520姐妹"></a>
           <span class="tag sales">月销 33万</span>
+          <span class="tag qty">销量 76</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3541,6 +3794,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100197227156.html" target="_blank"><img src="img/100197227156.jpg" loading="lazy" alt="美的508L十字门冰箱双系统双循环除菌净味大容量一级能效风冷无霜以旧换新白BCD-508WSPZM(E)"></a>
           <span class="tag sales">月销 4.9万</span>
+          <span class="tag qty">销量 14</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3556,6 +3810,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100182736647.html" target="_blank"><img src="img/100182736647.jpg" loading="lazy" alt="美的437L十字门冰箱60厘米超薄嵌入式除菌净味自动制冰一级能效风冷无霜以旧换新MR-460WUSPZE国家补贴"></a>
           <span class="tag sales">月销 4.6万</span>
+          <span class="tag qty">销量 12</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3571,6 +3826,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100190473017.html" target="_blank"><img src="img/100190473017.jpg" loading="lazy" alt="美的503L十字门冰箱60厘米超薄零嵌入式全空间养鲜一级能效风冷无霜以旧换新BCD-503WUSPZM(E)国家补贴"></a>
           <span class="tag sales">月销 <1万</span>
+          <span class="tag qty">销量 1</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3586,6 +3842,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100273504904.html" target="_blank"><img src="img/100273504904.jpg" loading="lazy" alt="美的熊墩墩601L十字门冰箱超薄零嵌入式双系统2.0净味超大容量国家补贴BCD-601WUSPZM(E)海贝黛"></a>
           <span class="tag sales">月销 52万</span>
+          <span class="tag qty">销量 96</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3601,6 +3858,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100245792635.html" target="_blank"><img src="img/100245792635.jpg" loading="lazy" alt="美的熊墩墩601L十字门冰箱超薄零嵌入式双系统2.0净味超大容量国家补贴BCD-601WUSPZM(E)星尘白"></a>
           <span class="tag sales">月销 31万</span>
+          <span class="tag qty">销量 58</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3616,6 +3874,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100371405836.html" target="_blank"><img src="img/100371405836.jpg" loading="lazy" alt="美的安睡系列餐边柜427L十字门45厘米薄嵌左餐右厨三循环新国标一级能效以旧换新MR-449WUSJPGZ"></a>
           <span class="tag sales">月销 24万</span>
+          <span class="tag qty">销量 42</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3631,6 +3890,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100197227204.html" target="_blank"><img src="img/100197227204.jpg" loading="lazy" alt="美的安睡系列餐边柜427L十字门45厘米薄嵌左餐右厨三循环一级能效无霜以旧换新BCD-427WUSGPZM国家补贴"></a>
           <span class="tag sales">月销 23万</span>
+          <span class="tag qty">销量 37</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3646,6 +3906,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100330444184.html" target="_blank"><img src="img/100330444184.jpg" loading="lazy" alt="美的小冰狗530十字四开门冰箱502L超薄零嵌入式双系统2.0双主动净味除菌一级能效大容量MR-530WUSPZE白"></a>
           <span class="tag sales">月销 10万</span>
+          <span class="tag qty">销量 20</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3661,6 +3922,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100256099527.html" target="_blank"><img src="img/100256099527.jpg" loading="lazy" alt="美的熊墩墩山海633十字门冰箱603L超薄零嵌双系统2.0净味制冰超大容量一级能效国家补贴MR-633WUSIPZE"></a>
           <span class="tag sales">月销 26万</span>
+          <span class="tag qty">销量 33</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3676,6 +3938,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100167374059.html" target="_blank"><img src="img/100167374059.jpg" loading="lazy" alt="美的熊墩墩603L十字门冰箱超薄零嵌入式双系统2.0超大容量以旧换新白色BCD-603WUSPZM(E)国家补贴"></a>
           <span class="tag sales">月销 14万</span>
+          <span class="tag qty">销量 21</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3691,6 +3954,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100038697742.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 470万</span>
+          <span class="tag qty">销量 1.9k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3706,6 +3970,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100120810289.html" target="_blank"><img src="img/100120810289.jpg" loading="lazy" alt="海尔「家宴系列」539L十字门母婴冰箱黑金净化抗菌一级变温风冷无霜大容量BCD-539WGHTDEDH9U1国家补贴"></a>
           <span class="tag sales">月销 391万</span>
+          <span class="tag qty">销量 1.4k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3721,6 +3986,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100312805854.html" target="_blank"><img src="img/100312805854.jpg" loading="lazy" alt="海尔「465超薄升级款」501L十字门母婴冰箱一级能效风冷无霜抗菌净味超薄BCD-501WGHTDEDH9U1国家补贴"></a>
           <span class="tag sales">月销 259万</span>
+          <span class="tag qty">销量 957</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3736,6 +4002,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100145529404.html" target="_blank"><img src="img/100145529404.jpg" loading="lazy" alt="海尔「小红花系列」418L十字门母婴冰箱594mm专业超薄零嵌BCD-418WGHTDB9S9U1国家补贴"></a>
           <span class="tag sales">月销 201万</span>
+          <span class="tag qty">销量 675</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3751,6 +4018,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100208089787.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 184万</span>
+          <span class="tag qty">销量 776</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3766,6 +4034,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100113806013.html" target="_blank"><img src="img/100113806013.jpg" loading="lazy" alt="海尔「家宴系列」531L十字门母婴冰箱干湿分储制冰一级抗菌风冷大容量灰BCD-531WGHTD59SHU1国家补贴"></a>
           <span class="tag sales">月销 125万</span>
+          <span class="tag qty">销量 485</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3781,6 +4050,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100346328916.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 120万</span>
+          <span class="tag qty">销量 527</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3796,6 +4066,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100276454940.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 91万</span>
+          <span class="tag qty">销量 326</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3811,6 +4082,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100277761086.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 316万</span>
+          <span class="tag qty">销量 835</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3826,6 +4098,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100241577285.html" target="_blank"><img src="img/100241577285.jpg" loading="lazy" alt="海尔小红花「539升级款」545升十字门冰箱冷藏冷冻双净化三档变温一级节能BCD-545WGHTDEDB7U1国家补贴"></a>
           <span class="tag sales">月销 180万</span>
+          <span class="tag qty">销量 544</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3841,6 +4114,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100208089785.html" target="_blank"><img src="img/100208089785.jpg" loading="lazy" alt="海尔「山茶花2.0」501L十字门冰箱双系统双净化超薄零嵌一级能效风冷BCD-501WGHTDC4FBU1国家补贴"></a>
           <span class="tag sales">月销 83万</span>
+          <span class="tag qty">销量 194</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3856,6 +4130,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100144211448.html" target="_blank"><img src="img/100144211448.jpg" loading="lazy" alt="海尔小红花516L十字门母婴冰箱594mm超薄零嵌除菌净味降农残防霉菌变温BCD-516WGHTDB9GPU1国家补贴"></a>
           <span class="tag sales">月销 28万</span>
+          <span class="tag qty">销量 63</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3871,6 +4146,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100329267972.html" target="_blank"><img src="img/100329267972.jpg" loading="lazy" alt="海尔（Haier）出品统帅懒人500L十字四开门冰箱制冰超薄小红花双系统BCD-500WGLTDGDS9U1国家补贴【2026年新款】"></a>
           <span class="tag sales">月销 13万</span>
+          <span class="tag qty">销量 33</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3886,6 +4162,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100246744403.html" target="_blank"><img src="img/100246744403.jpg" loading="lazy" alt="海尔（Haier）出品统帅懒人500L十字四开门冰箱超薄零嵌入自动制冰山茶花双系统BCD-500WGLTDG4L9U1国家补贴"></a>
           <span class="tag sales">月销 12万</span>
+          <span class="tag qty">销量 29</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3901,6 +4178,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100346024450.html" target="_blank"><img src="img/100346024450.jpg" loading="lazy" alt="海尔「山茶花2.0」501L十字门冰箱双系统双净化0串味99.99%除菌变温空间BCD-501WGHTDC4FSU1国家补贴【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 88万</span>
+          <span class="tag qty">销量 203</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3916,6 +4194,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100259479749.html" target="_blank"><img src="img/100259479749.jpg" loading="lazy" alt="海尔「云溪系列」502L十字门冰箱全空间保鲜制冰双系统超薄零嵌BCD-502WGHTD1CWLU1国家补贴"></a>
           <span class="tag sales">月销 88万</span>
+          <span class="tag qty">销量 184</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3931,6 +4210,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100339636316.html" target="_blank"><img src="img/100339636316.jpg" loading="lazy" alt="海尔「山茶花Pro」机皇550L十字门冰箱双系统双净化0串味超薄零嵌除菌BCD-550WGHTDBCFSU1国家补贴"></a>
           <span class="tag sales">月销 44万</span>
+          <span class="tag qty">销量 82</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3946,6 +4226,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100208089783.html" target="_blank"><img src="img/100208089783.jpg" loading="lazy" alt="海尔「云溪系列」502L十字门冰箱双系统双擎恒鲜舱全空间超薄零嵌BCD-502WGHTD1CYXU1国家补贴【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 80万</span>
+          <span class="tag qty">销量 161</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3961,6 +4242,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100035753586.html" target="_blank"><img src="img/100035753586.jpg" loading="lazy" alt="容声465L十字门电冰箱超薄一级能效风冷无霜双变频节能净味四开门家用以旧换新国家补贴BCD-465WD18FP"></a>
           <span class="tag sales">月销 505万</span>
+          <span class="tag qty">销量 2.6k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3976,6 +4258,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100076106275.html" target="_blank"><img src="img/100076106275.jpg" loading="lazy" alt="容声520L十字门冰箱大容量超薄一级能效风冷无霜双变频净味四开门家用以旧换新国家补贴BCD-520WD12FP"></a>
           <span class="tag sales">月销 268万</span>
+          <span class="tag qty">销量 1.2k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -3991,6 +4274,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100138874416.html" target="_blank"><img src="img/100138874416.jpg" loading="lazy" alt="容声513pro十字门电冰箱双系统双循环除菌净味一级能效风冷无霜大容量四开门国家补贴BCD-513WD15FPA"></a>
           <span class="tag sales">月销 230万</span>
+          <span class="tag qty">销量 825</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4006,6 +4290,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100275899527.html" target="_blank"><img src="img/100275899527.jpg" loading="lazy" alt="容声550L十字门冰箱【513pro升级款】双系统双循环主动净味大容量新一级无霜国家补贴SR-550Q30CNLBJ灰"></a>
           <span class="tag sales">月销 127万</span>
+          <span class="tag qty">销量 421</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4021,6 +4306,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100244458247.html" target="_blank"><img src="img/100244458247.jpg" loading="lazy" alt="容声大方糕552L十字门冰箱新一级能效大容量双系统底部散热超薄嵌入国家补贴BCD-552Q30CQLBD星澜【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 68万</span>
+          <span class="tag qty">销量 198</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4036,6 +4322,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100148402730.html" target="_blank"><img src="img/100148402730.jpg" loading="lazy" alt="容声501pro十字门冰箱IDP主动除菌净味双系统双循环一级能效风冷无霜大容量国家补贴BCD-501WD3FPZ【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 46万</span>
+          <span class="tag qty">销量 177</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4051,6 +4338,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100211514833.html" target="_blank"><img src="img/100211514833.jpg" loading="lazy" alt="容声战神572L十字四开门冰箱大容量双净双系统超薄零嵌入式一级能效国家补贴BCD-572N40CQLAD灰"></a>
           <span class="tag sales">月销 61万</span>
+          <span class="tag qty">销量 153</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4066,6 +4354,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100195902998.html" target="_blank"><img src="img/100195902998.jpg" loading="lazy" alt="容声方糖505L十字门冰箱双系统双循环超薄零嵌入式一级能效风冷无霜大容量国家补贴BCD-505P60CZMAD灰【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 59万</span>
+          <span class="tag qty">销量 147</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4081,6 +4370,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100337421792.html" target="_blank"><img src="img/100337421792.jpg" loading="lazy" alt="容声大方糕552L十字门冰箱新一级能效大容量双系统底部散热超薄嵌入国家补贴BCD-552Q30CQLBD白【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 54万</span>
+          <span class="tag qty">销量 153</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4096,6 +4386,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100252868317.html" target="_blank"><img src="img/100252868317.jpg" loading="lazy" alt="容声大冰象603L十字门冰箱超大容量双净双系统超薄嵌入式新一级能效国家补贴BCD-603Q50CZLBD白世界杯"></a>
           <span class="tag sales">月销 33万</span>
+          <span class="tag qty">销量 47</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4111,6 +4402,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100252868319.html" target="_blank"><img src="img/100252868319.jpg" loading="lazy" alt="容声大冰象603L十字门冰箱超大容量双净双系统超薄嵌入式新一级能效国家补贴BCD-603Q50CZLBD灰世界杯"></a>
           <span class="tag sales">月销 21万</span>
+          <span class="tag qty">销量 32</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4126,6 +4418,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100250022852.html" target="_blank"><img src="img/100250022852.jpg" loading="lazy" alt="美的607pro双开门冰箱超大容量一级能效家用风冷无霜大冷冻节能星辰砂BCD-607WKPM(E)以旧换新国家补贴"></a>
           <span class="tag sales">月销 409万</span>
+          <span class="tag qty">销量 2.1k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4141,6 +4434,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100272035052.html" target="_blank"><img src="img/100272035052.jpg" loading="lazy" alt="美的572双开门冰箱大容量一级能效双变频节能风冷无霜囤货净味以旧换新国家补贴BCD-572WKPM(Q)"></a>
           <span class="tag sales">月销 113万</span>
+          <span class="tag qty">销量 570</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4156,6 +4450,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100213386663.html" target="_blank"><img src="img/100213386663.jpg" loading="lazy" alt="美的606升双开门冰箱一级能效风冷无霜净味双变频超大容量大冷冻BCD-606WKPM(E)国家补贴【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 75万</span>
+          <span class="tag qty">销量 353</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4171,6 +4466,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100214822144.html" target="_blank"><img src="img/100214822144.jpg" loading="lazy" alt="美的M60系列540升对开门双开门冰箱除菌超薄零嵌入式大容量一级能效风冷BCD-540WUKPZM(E)国家补贴"></a>
           <span class="tag sales">月销 16万</span>
+          <span class="tag qty">销量 46</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4186,6 +4482,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100157003957.html" target="_blank"><img src="img/100157003957.jpg" loading="lazy" alt="美的大嵌750升对开门双开门冰箱超薄零嵌入式超大容量一级能效变频风冷无霜BCD-750WKPZM(E)国家补贴"></a>
           <span class="tag sales">月销 54万</span>
+          <span class="tag qty">销量 104</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4201,6 +4498,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100143434406.html" target="_blank"><img src="img/100143434406.jpg" loading="lazy" alt="美的M60系列613升对开门双开门冰箱双系统超薄零嵌入式超大容量一级玻璃面板MR-643WUKGPZE国家补贴"></a>
           <span class="tag sales">月销 33万</span>
+          <span class="tag qty">销量 68</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4216,6 +4514,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100352209244.html" target="_blank"><img src="img/100352209244.jpg" loading="lazy" alt="统帅出品统帅悦享系列185L两门家用冰箱小型直冷租房双开门一级能效国家补贴LC2-186S901【2026新款】"></a>
           <span class="tag sales">月销 227万</span>
+          <span class="tag qty">销量 2.6k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4231,6 +4530,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100145529388.html" target="_blank"><img src="img/100145529388.jpg" loading="lazy" alt="海尔「家宴系列」539L对开门冰箱黑金净化一级能效风冷无霜大容量抗菌BCD-539WGHSSEDH9国家补贴"></a>
           <span class="tag sales">月销 188万</span>
+          <span class="tag qty">销量 920</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4246,6 +4546,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100051954946.html" target="_blank"><img src="img/100051954946.jpg" loading="lazy" alt="海尔出品统帅618L对开双开门大电冰箱家用大容量一级能效风冷无霜BCD-618WGLSSEDW9以旧换新国家补贴"></a>
           <span class="tag sales">月销 100万</span>
+          <span class="tag qty">销量 516</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4261,6 +4562,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100155796169.html" target="_blank"><img src="img/100155796169.jpg" loading="lazy" alt="海尔（Haier）冰箱出品统帅538L对开门冰箱家用大容量一级能效风冷无霜LSS-560WL9以旧换新国家补贴15%【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 65万</span>
+          <span class="tag qty">销量 361</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4276,6 +4578,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100037217877.html" target="_blank"><img src="img/100037217877.jpg" loading="lazy" alt="海尔盛宴618L对开门冰箱黑金净化新国标一级能效省电家用风冷无霜超大容量BCD-618WGHSSEDBL国家补贴"></a>
           <span class="tag sales">月销 583万</span>
+          <span class="tag qty">销量 2.4k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4291,6 +4594,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100065933207.html" target="_blank"><img src="img/100065933207.jpg" loading="lazy" alt="海尔盛宴630L对开门冰箱干湿分储新国标一级能效风冷变频超大容量灰色BCD-630WGHSS95SMU1国家补贴"></a>
           <span class="tag sales">月销 133万</span>
+          <span class="tag qty">销量 368</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4306,6 +4610,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100036999679.html" target="_blank"><img src="img/100036999679.jpg" loading="lazy" alt="容声609L双开门电冰箱超大容量一级能效风冷无霜双变频节能家用对开门以旧换新国家补贴BCD-609WD11HP"></a>
           <span class="tag sales">月销 425万</span>
+          <span class="tag qty">销量 2.1k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4321,6 +4626,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100138874432.html" target="_blank"><img src="img/100138874432.jpg" loading="lazy" alt="容声547L双开门冰箱大容量超薄一级能效风冷无霜双变频节能净味对开门以旧换新国家补贴BCD-547WD12HP"></a>
           <span class="tag sales">月销 209万</span>
+          <span class="tag qty">销量 1.4k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4336,6 +4642,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100148402720.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 155万</span>
+          <span class="tag qty">销量 630</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4351,6 +4658,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100239644065.html" target="_blank"><img src="img/100239644065.jpg" loading="lazy" alt="美的182L两门小冰箱灰色两门小户型一级能效客厅家用租房宿舍可冷藏冷冻不占地MR-191A"></a>
           <span class="tag sales">月销 241万</span>
+          <span class="tag qty">销量 2.6k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4366,6 +4674,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100319780812.html" target="_blank"><img src="img/100319780812.jpg" loading="lazy" alt="美的220L三门冰箱灰色一级能效租房家用客厅宿舍小冰箱三开门省电低音MR-231T"></a>
           <span class="tag sales">月销 218万</span>
+          <span class="tag qty">销量 2.0k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4381,6 +4690,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100240806313.html" target="_blank"><img src="img/100240806313.jpg" loading="lazy" alt="美的冰箱2026新款182升两门家电冰箱小型家用出租房双门一级能效节能家用冷冻小冰箱MR-191A白国家补贴【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 79万</span>
+          <span class="tag qty">销量 861</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4396,6 +4706,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100241394417.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 71万</span>
+          <span class="tag qty">销量 657</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4411,6 +4722,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100109019215.html" target="_blank"><img src="img/100109019215.jpg" loading="lazy" alt="美的219L三门冰箱白色租房家用客厅小型冰箱中门软冷冻节能省电低音MR-230TE"></a>
           <span class="tag sales">月销 40万</span>
+          <span class="tag qty">销量 462</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4426,6 +4738,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100016408504.html" target="_blank"><img src="img/100016408504.jpg" loading="lazy" alt="美的93L单门小冰箱一级低音复古白色小单温冷藏租房家用宿舍办公室可放美妆BC-93MF"></a>
           <span class="tag sales">月销 39万</span>
+          <span class="tag qty">销量 582</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4441,6 +4754,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100133046493.html" target="_blank"><img src="img/100133046493.jpg" loading="lazy" alt="美的182L双开门两门小户型家用客厅租房宿舍冰箱可冷藏冷冻双温小巧不占地低音运行BCD-182M"></a>
           <span class="tag sales">月销 21万</span>
+          <span class="tag qty">销量 295</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4456,6 +4770,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100127848554.html" target="_blank"><img src="img/100127848554.jpg" loading="lazy" alt="美的181L两门冰箱白色两门小户型客厅家用电冰箱租房宿舍低音节能低噪可冷藏冷冻不占地MR-190E"></a>
           <span class="tag sales">月销 18万</span>
+          <span class="tag qty">销量 236</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4471,6 +4786,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100010774115.html" target="_blank"><img src="img/100010774115.jpg" loading="lazy" alt="美的112L两门小冰箱灰色双温小冰箱迷你家用宿舍租房灵活摆放节能低音深冷速冻 BCD-112CM"></a>
           <span class="tag sales">月销 10万</span>
+          <span class="tag qty">销量 141</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4486,6 +4802,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100001478945.html" target="_blank"><img src="img/100001478945.jpg" loading="lazy" alt="美的88L两门小冰箱白色迷你冰箱租房宿舍办公室小型家用双温可冷冻冷藏节能BCD-88CM"></a>
           <span class="tag sales">月销 9.1万</span>
+          <span class="tag qty">销量 130</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4501,6 +4818,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/372713.html" target="_blank"><img src="img/372713.jpg" loading="lazy" alt="美的45L单门小冰箱白色迷你租房宿舍办公室家用单温冷藏小型电冰箱美妆可用节能运行BC-45M"></a>
           <span class="tag sales">月销 1.7万</span>
+          <span class="tag qty">销量 37</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4516,6 +4834,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100140558574.html" target="_blank"><img src="img/100140558574.jpg" loading="lazy" alt="美的238升三门冰箱灰色小型风冷家用变频一级能效宿舍租房以旧换新小冰箱MR-249WTPE"></a>
           <span class="tag sales">月销 350万</span>
+          <span class="tag qty">销量 2.5k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4531,6 +4850,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100358814424.html" target="_blank"><img src="img/100358814424.jpg" loading="lazy" alt="美的271升三门冰箱灰新国标小型电冰箱三开门一级能效风冷无霜双净味家用租房MR-283WTPE"></a>
           <span class="tag sales">月销 129万</span>
+          <span class="tag qty">销量 833</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4546,6 +4866,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100321086210.html" target="_blank"><img src="img/100321086210.jpg" loading="lazy" alt="美的239升三门冰箱灰色家用小冰箱小型三开门风冷无霜一级能效以旧换新电冰箱MR-251WTP国家补贴"></a>
           <span class="tag sales">月销 122万</span>
+          <span class="tag qty">销量 897</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4561,6 +4882,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100241394435.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 122万</span>
+          <span class="tag qty">销量 1.0k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4576,6 +4898,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100319780798.html" target="_blank"><img src="img/100319780798.jpg" loading="lazy" alt="美的186升二门冰箱白色双系统租房小型家用电冰箱风冷两门小冰一级能效以旧换新MR-196W"></a>
           <span class="tag sales">月销 72万</span>
+          <span class="tag qty">销量 589</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4591,6 +4914,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100280053093.html" target="_blank"><img src="img/100280053093.jpg" loading="lazy" alt="美的271升三门冰箱白色新国标三开门家用小型电冰箱一级风冷租房小冰箱MR-283WTPE以旧换新"></a>
           <span class="tag sales">月销 42万</span>
+          <span class="tag qty">销量 243</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4606,6 +4930,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100050127888.html" target="_blank"><img src="img/100050127888.jpg" loading="lazy" alt="美的271升三门冰箱灰色小型电冰箱三开门一级能效节能风冷无霜双净味家用租房MR-283WTPZE"></a>
           <span class="tag sales">月销 38万</span>
+          <span class="tag qty">销量 208</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4621,6 +4946,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100163880526.html" target="_blank"><img src="img/100163880526.jpg" loading="lazy" alt="美的220L三门冰箱灰色租房家用客厅宿舍小型冰箱三开门三温低耗省电低音运行BCD-220TM"></a>
           <span class="tag sales">月销 37万</span>
+          <span class="tag qty">销量 488</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4636,6 +4962,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100056743265.html" target="_blank"><img src="img/100056743265.jpg" loading="lazy" alt="美的239升三门冰箱白色家用小户型三开门风冷变频一级能效节能宿舍租房电冰箱MR-251WTPE"></a>
           <span class="tag sales">月销 36万</span>
+          <span class="tag qty">销量 214</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4651,6 +4978,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100134276685.html" target="_blank"><img src="img/100134276685.jpg" loading="lazy" alt="美的271升三门冰箱白色三开门家用小型电冰箱一级能效风冷租房小冰箱MR-283WTPZE以旧换新"></a>
           <span class="tag sales">月销 7.1万</span>
+          <span class="tag qty">销量 37</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4666,6 +4994,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100349000320.html" target="_blank"><img src="img/100349000320.jpg" loading="lazy" alt="统帅出品统帅悦享系列230L三门家用冰箱小型直冷租房三开门一级能效国家补贴LC3-230S901【2026新款】"></a>
           <span class="tag sales">月销 443万</span>
+          <span class="tag qty">销量 4.5k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4681,6 +5010,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100346090186.html" target="_blank"><img src="img/100346090186.jpg" loading="lazy" alt="海尔「真省电」225L三门家用小户型电冰箱2026新款一级能效节能软冷冻变温HC3-225LHC3E0S9国家补贴"></a>
           <span class="tag sales">月销 416万</span>
+          <span class="tag qty">销量 3.9k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4696,6 +5026,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100222087831.html" target="_blank"><img src="img/100222087831.jpg" loading="lazy" alt="海尔「一级能效风冷无霜」165L两门家用小户型冰箱真省电抗菌净味灰色HC2-165WGHC2E9S9国家补贴"></a>
           <span class="tag sales">月销 216万</span>
+          <span class="tag qty">销量 2.2k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4711,6 +5042,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100016340200.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 205万</span>
+          <span class="tag qty">销量 2.7k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4726,6 +5058,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100346010166.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 203万</span>
+          <span class="tag qty">销量 2.2k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4741,6 +5074,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100208089779.html" target="_blank"><img src="img/100208089779.jpg" loading="lazy" alt="海尔「一级能效风冷无霜」165L两门家用小户型冰箱真省电抗菌净味白色HC2-165WGHC2E9WV国家补贴"></a>
           <span class="tag sales">月销 165万</span>
+          <span class="tag qty">销量 1.6k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4756,6 +5090,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100015521756.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 79万</span>
+          <span class="tag qty">销量 1.1k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4771,6 +5106,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100109995264.html" target="_blank"><img src="img/100109995264.jpg" loading="lazy" alt="海尔「真省电」217L三门家用小户型冰箱抗菌净味一级能效风冷无霜星辉银BCD-217WGHC3E9S9国家补贴"></a>
           <span class="tag sales">月销 470万</span>
+          <span class="tag qty">销量 3.5k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4786,6 +5122,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100210638040.html" target="_blank"><img src="img/100210638040.jpg" loading="lazy" alt="海尔「真省电」310L三门冰箱抗菌净味一级能效风冷无霜BCD-310WGHD3E7WV(银)国家补贴"></a>
           <span class="tag sales">月销 326万</span>
+          <span class="tag qty">销量 1.7k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4801,6 +5138,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100177332637.html" target="_blank"><img src="img/100177332637.jpg" loading="lazy" alt="海尔出品统帅悦享系列251L三门小户型家用电冰箱变频净味一级能效风冷无霜LC3-258WS9以旧换新国家补贴"></a>
           <span class="tag sales">月销 271万</span>
+          <span class="tag qty">销量 1.9k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4816,6 +5154,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100164436731.html" target="_blank"><img src="img/100164436731.jpg" loading="lazy" alt="海尔「真省电」251L三门家用小户型冰箱抗菌净味一级能效风冷无霜星辉银BCD-251WGHC3E7WV(银)国家补贴"></a>
           <span class="tag sales">月销 215万</span>
+          <span class="tag qty">销量 1.3k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4831,6 +5170,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100346061670.html" target="_blank"><img src="img/100346061670.jpg" loading="lazy" alt="海尔「真省电」200L三门家用小户型冰箱2026新款一级能效风冷无霜抗菌节能HC3-200WGHC2E9S9国家补贴"></a>
           <span class="tag sales">月销 140万</span>
+          <span class="tag qty">销量 1.1k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4846,6 +5186,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100292550928.html" target="_blank"><img src="img/100292550928.jpg" loading="lazy" alt="海尔「真省电」285L两门家用小户型冰箱一级能效风冷无霜左右开门可调灰色BCD-285WGHC2DES9国家补贴"></a>
           <span class="tag sales">月销 139万</span>
+          <span class="tag qty">销量 828</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4861,6 +5202,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100210991502.html" target="_blank"><img src="img/100210991502.jpg" loading="lazy" alt="海尔「真省电」193L两门家用小户型冰箱新国标一级能效风冷无霜抗菌净味变温BCD-193WGHC2E7WV国家补贴【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 79万</span>
+          <span class="tag qty">销量 639</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4876,6 +5218,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100265635605.html" target="_blank"><img src="img/100265635605.jpg" loading="lazy" alt="海尔冰箱出品统帅悦享系列282L三门小型家用复古变频电冰箱一级能效风冷无霜LC3-290WL9冰箱2026新款"></a>
           <span class="tag sales">月销 38万</span>
+          <span class="tag qty">销量 271</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4891,6 +5234,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100278483546.html" target="_blank"><img src="img/100278483546.jpg" loading="lazy" alt="容声215L三门小冰箱1-2人小型家用出租房宿舍中门软冷冻节能省电低音运行以旧换新618BCD-215E10RNLAD"></a>
           <span class="tag sales">月销 150万</span>
+          <span class="tag qty">销量 1.8k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4906,6 +5250,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100278483544.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 107万</span>
+          <span class="tag qty">销量 1.5k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4921,6 +5266,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100165615841.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 84万</span>
+          <span class="tag qty">销量 906</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4936,6 +5282,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100242732645.html" target="_blank"><img src="img/100242732645.png" loading="lazy" alt="容声95L单门小冰箱家用一级能效小户型节能超薄保鲜出租房宿舍迷你以旧换新BC-95D12"></a>
           <span class="tag sales">月销 30万</span>
+          <span class="tag qty">销量 508</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4951,6 +5298,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100120152551.html" target="_blank"><div class="no-img">无图</div></a>
           <span class="tag sales">月销 288万</span>
+          <span class="tag qty">销量 2.5k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4966,6 +5314,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100326821824.html" target="_blank"><img src="img/100326821824.jpg" loading="lazy" alt="容声261L三门小电冰箱2026新款家用新国标一级能效风冷无霜变频出租房国家补贴BCD-261D20RNLBD"></a>
           <span class="tag sales">月销 230万</span>
+          <span class="tag qty">销量 1.6k</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -4981,6 +5330,7 @@
         <div class="thumb-wrap">
           <a class="thumb" href="https://item.jd.com/100237588985.html" target="_blank"><img src="img/100237588985.jpg" loading="lazy" alt="容声273L三开门小冰箱小型家用超薄风冷无霜新国标一级能效变频小户型租房国家补贴BCD-273E20RNLAJ【行情 报价 价格 评测】"></a>
           <span class="tag sales">月销 76万</span>
+          <span class="tag qty">销量 460</span>
         </div>
         <div class="meta">
           <div class="header">
@@ -5024,13 +5374,48 @@
     </div>
   </div>
 
+  <!-- 编辑卡片弹窗 -->
+  <div class="modal-bg" id="edit-modal">
+    <div class="modal">
+      <h3>编辑卡片 <span style="color:#888;font-size:11px;font-weight:normal" id="edit-sku"></span></h3>
+      <label>型号名</label>
+      <input id="edit-name">
+      <label>价格 (数字)</label>
+      <input id="edit-price" type="number" step="0.01">
+      <label>容积 (数字 L)</label>
+      <input id="edit-liters" type="number">
+      <label>系列 (留空则不显示)</label>
+      <input id="edit-series">
+      <label>门体 (改后自动换到对应 tab)</label>
+      <select id="edit-door">
+        <option value="">(不改)</option>
+        <option value="法式">法式</option>
+        <option value="十字">十字</option>
+        <option value="对开">对开</option>
+        <option value="小冰箱">小冰箱</option>
+      </select>
+      <label>卖点 (每行一条,留空清空全部)</label>
+      <textarea id="edit-feats" rows="6"></textarea>
+      <div class="btns">
+        <button id="edit-revert" style="margin-right:auto;color:#e53e3e">还原原始</button>
+        <button id="edit-cancel">取消</button>
+        <button id="edit-ok" class="primary">保存</button>
+      </div>
+    </div>
+  </div>
+
 <script>
   const STORAGE_KEY = 'v8_edit_state';
-  const state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"hidden":[],"custom":[]}');
+  const state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"hidden":[],"custom":[],"edits":{}}');
+  if (!state.edits) state.edits = {};  // backward compat for older saved state
   function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
   function updateCount() {
     const c = state.hidden.length;
-    document.getElementById('hidden-count').textContent = c ? `已隐藏 ${c} 张` : '';
+    const e = Object.keys(state.edits).length;
+    const parts = [];
+    if (c) parts.push(`已隐藏 ${c} 张`);
+    if (e) parts.push(`已修改 ${e} 张`);
+    document.getElementById('hidden-count').textContent = parts.join(' · ');
   }
 
   // Apply hidden state to existing cards
@@ -5039,7 +5424,178 @@
       const sku = c.dataset.sku;
       c.classList.toggle('hidden', state.hidden.includes(sku));
     });
+    recountAll();
     updateCount();
+  }
+
+  // ---- edits: per-SKU field overrides ----
+  // Snapshot each card's original HTML the first time we see it, so we can revert.
+  const originalHTML = new Map();  // sku -> outerHTML
+  function snapshotCard(card) {
+    const sku = card.dataset.sku;
+    if (!originalHTML.has(sku)) originalHTML.set(sku, card.innerHTML);
+  }
+  function applyEditToCard(card) {
+    const sku = card.dataset.sku;
+    const ed = state.edits[sku];
+    // always start from original
+    if (originalHTML.has(sku)) card.innerHTML = originalHTML.get(sku);
+    // re-attach action buttons after innerHTML reset
+    attachActionButtons(card);
+    if (!ed) { card.classList.remove('edited'); return; }
+    card.classList.add('edited');
+    if (ed.name != null) {
+      const nameEl = card.querySelector('.name');
+      if (nameEl) nameEl.textContent = ed.name;
+    }
+    if (ed.price != null) {
+      const priceEl = card.querySelector('.tag.price');
+      if (priceEl) priceEl.textContent = ed.price ? '¥' + Number(ed.price).toFixed(0) : 'N/A';
+    }
+    if (ed.liters != null) {
+      const literEl = card.querySelector('.tag.liter');
+      if (literEl) literEl.textContent = (ed.liters || '?') + 'L';
+    }
+    if (ed.series != null) {
+      let seriesEl = card.querySelector('.tag.series-tag');
+      const lineEl = card.querySelector('.line');
+      if (ed.series) {
+        if (!seriesEl && lineEl) {
+          seriesEl = document.createElement('span');
+          seriesEl.className = 'tag series-tag';
+          lineEl.appendChild(seriesEl);
+        }
+        if (seriesEl) seriesEl.textContent = ed.series;
+      } else if (seriesEl) {
+        seriesEl.remove();
+      }
+    }
+    if (ed.features != null) {
+      const feats = card.querySelector('.feats');
+      if (feats) feats.innerHTML = ed.features.map(f => `<li>${escapeHTML(f)}</li>`).join('');
+    }
+  }
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  const DOORS = ['法式','十字','对开','小冰箱'];
+  function detectDoor(sku) {
+    // Which door-panel does this SKU appear in? (only one built-in door panel per SKU)
+    for (const d of DOORS) {
+      const panel = document.getElementById('panel-' + d);
+      if (panel && panel.querySelector(`.card:not([data-moved-out])[data-sku="${CSS.escape(sku)}"]`)) return d;
+    }
+    return '';
+  }
+  function priceBucket(P) {
+    if (!P) return null;
+    if (P<1000) return "<1k"; if (P<2000) return "1k-2k"; if (P<3000) return "2k-3k";
+    if (P<4000) return "3k-4k"; if (P<5000) return "4k-5k"; if (P<6000) return "5k-6k";
+    if (P<7000) return "6k-7k"; if (P<8000) return "7k-8k"; return "8k+";
+  }
+  function moveCardToDoor(sku, newDoor) {
+    // 1) hide the card in whichever door panel it originally lives (mark moved-out)
+    for (const d of DOORS) {
+      const panel = document.getElementById('panel-' + d);
+      if (!panel) continue;
+      panel.querySelectorAll(`.card[data-sku="${CSS.escape(sku)}"]`).forEach(c => {
+        // remove clone markers first
+        if (c.dataset.movedClone) { c.remove(); return; }
+        if (d !== newDoor) {
+          c.dataset.movedOut = '1';
+          c.style.display = 'none';
+        } else {
+          delete c.dataset.movedOut;
+          c.style.display = '';
+        }
+      });
+    }
+    // 2) if new door panel does NOT already have this SKU, clone the panel-all card into it
+    const targetPanel = document.getElementById('panel-' + newDoor);
+    if (!targetPanel) return;
+    if (targetPanel.querySelector(`.card:not([data-moved-out])[data-sku="${CSS.escape(sku)}"]`)) return;
+    const allCard = document.querySelector(`#panel-all .card[data-sku="${CSS.escape(sku)}"]`);
+    if (!allCard) return;
+    // locate td by brand row + price col
+    const brand = allCard.dataset.brand;
+    const priceStr = (allCard.querySelector('.tag.price')?.textContent || '').replace(/[^\d.]/g, '');
+    const pb = priceBucket(parseFloat(priceStr));
+    if (!pb) return;
+    const headers = targetPanel.querySelectorAll('thead th.price-head');
+    let colIdx = -1;
+    headers.forEach((h, i) => { if (h.textContent.trim() === pb) colIdx = i; });
+    if (colIdx < 0) return;
+    let targetRow = null;
+    targetPanel.querySelectorAll('tbody tr').forEach(row => {
+      const th = row.querySelector('th.brand-head');
+      if (th && th.textContent.trim().startsWith(brand)) targetRow = row;
+    });
+    if (!targetRow) return;
+    const td = targetRow.querySelectorAll('td')[colIdx];
+    if (!td) return;
+    const clone = allCard.cloneNode(true);
+    clone.dataset.movedClone = '1';
+    // strip original click bindings by re-attaching action buttons
+    attachActionButtons(clone);
+    const empty = td.querySelector('.empty');
+    if (empty) empty.remove();
+    td.appendChild(clone);
+  }
+  function applyDoorMoves() {
+    // Called on load: for each edited SKU with a door override, migrate.
+    Object.entries(state.edits).forEach(([sku, ed]) => {
+      if (ed && ed.door) moveCardToDoor(sku, ed.door);
+    });
+  }
+  function applyEdits() {
+    document.querySelectorAll('.card:not([data-custom])').forEach(applyEditToCard);
+    applyDoorMoves();
+    recountAll();
+    updateCount();
+  }
+
+  // ---- Live recount for tab buttons + panel hints + brand-head cnt ----
+  function isCardVisible(card) {
+    // count if not hidden by user + not moved-out to another door
+    return !card.classList.contains('hidden') && !card.dataset.movedOut;
+  }
+  function recountAll() {
+    // Per panel: count visible cards, break down by brand
+    const brandNames = ["美的","海尔","容声"];
+    document.querySelectorAll('.panel').forEach(panel => {
+      const cards = Array.from(panel.querySelectorAll('.card')).filter(isCardVisible);
+      const total = cards.length;
+      const byBrand = {};
+      brandNames.forEach(b => byBrand[b] = cards.filter(c => c.dataset.brand === b).length);
+      // brand-head cnt
+      panel.querySelectorAll('tbody tr').forEach(row => {
+        const th = row.querySelector('th.brand-head');
+        if (!th) return;
+        const cnt = th.querySelector('.cnt');
+        if (!cnt) return;
+        const brand = brandNames.find(b => th.textContent.trim().startsWith(b));
+        if (brand) cnt.textContent = (byBrand[brand] || 0) + '款';
+      });
+      // panel-hint
+      const hint = panel.querySelector('.panel-hint');
+      if (hint) {
+        const panelId = panel.id.replace('panel-','');
+        if (panelId === 'all') {
+          hint.innerHTML = `全部 ${total} 款(美的${byBrand["美的"]} · 海尔${byBrand["海尔"]} · 容声${byBrand["容声"]}),纵轴=品牌 · 横轴=价格`;
+        } else {
+          hint.innerHTML = `<b>${panelId}</b> · 共 ${total} 款(美的${byBrand["美的"]} · 海尔${byBrand["海尔"]} · 容声${byBrand["容声"]})· 纵轴=品牌 · 横轴=价格`;
+        }
+      }
+    });
+    // tab button counts
+    document.querySelectorAll('.tab').forEach(btn => {
+      const target = btn.dataset.target;
+      const panelId = target === 'all' ? 'panel-all' : 'panel-' + target;
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      const n = Array.from(panel.querySelectorAll('.card')).filter(isCardVisible).length;
+      btn.textContent = btn.textContent.replace(/\(\d+\)$/, `(${n})`);
+    });
   }
 
   // Render custom cards from state
@@ -5109,14 +5665,18 @@
       if (empty) empty.remove();
       td.appendChild(card);
     });
+    recountAll();
   }
 
-  // Attach remove buttons to all built-in cards
-  document.querySelectorAll('.card').forEach(c => {
-    const btn = document.createElement('div');
-    btn.className = 'card-remove';
-    btn.title = '隐藏此卡片';
-    btn.addEventListener('click', e => {
+  // Attach action buttons (remove + edit) to a built-in card.
+  // Safe to call multiple times — removes existing buttons first.
+  function attachActionButtons(c) {
+    c.querySelectorAll(':scope > .card-remove, :scope > .card-edit').forEach(el => el.remove());
+
+    const btnRm = document.createElement('div');
+    btnRm.className = 'card-remove';
+    btnRm.title = '隐藏此卡片';
+    btnRm.addEventListener('click', e => {
       e.stopPropagation();
       const sku = c.dataset.sku;
       const idx = state.hidden.indexOf(sku);
@@ -5124,7 +5684,22 @@
       else state.hidden.push(sku);
       save(); applyHidden();
     });
-    c.appendChild(btn);
+    c.appendChild(btnRm);
+
+    const btnEd = document.createElement('div');
+    btnEd.className = 'card-edit';
+    btnEd.title = '编辑此卡片信息';
+    btnEd.addEventListener('click', e => {
+      e.stopPropagation();
+      openEditModal(c);
+    });
+    c.appendChild(btnEd);
+  }
+  // Attach action buttons to all built-in cards + snapshot originals
+  document.querySelectorAll('.card').forEach(c => {
+    if (c.dataset.custom) return;
+    snapshotCard(c);
+    attachActionButtons(c);
   });
 
   // Tabs
@@ -5157,9 +5732,92 @@
     btnShow.textContent = on ? '👁 隐藏已删除' : '👁 显示已隐藏';
   });
   btnReset.addEventListener('click', () => {
-    if (!confirm('确定要清空所有隐藏 / 自定义卡片状态吗?')) return;
-    state.hidden = []; state.custom = []; save();
-    applyHidden(); renderCustomCards();
+    if (!confirm('确定要清空所有 隐藏 / 自定义卡片 / 卡片修改 吗?')) return;
+    state.hidden = []; state.custom = []; state.edits = {}; save();
+    // Wipe all door-move artifacts by full reload — simplest reliable revert.
+    location.reload();
+  });
+
+  // ---- Edit-modal wiring ----
+  const editModal = document.getElementById('edit-modal');
+  let editingSku = null;
+  function readOriginalFields(card) {
+    return {
+      name: (card.querySelector('.name')?.textContent || '').trim(),
+      price: (() => {
+        const t = (card.querySelector('.tag.price')?.textContent || '').replace(/[^\d.]/g, '');
+        return t ? parseFloat(t) : null;
+      })(),
+      liters: (() => {
+        const t = (card.querySelector('.tag.liter')?.textContent || '').replace(/[^\d]/g, '');
+        return t ? parseInt(t) : null;
+      })(),
+      series: (card.querySelector('.tag.series-tag')?.textContent || '').trim(),
+      features: Array.from(card.querySelectorAll('.feats li')).map(li => li.textContent.trim()).filter(Boolean),
+    };
+  }
+  function openEditModal(card) {
+    editingSku = card.dataset.sku;
+    // Read whatever's currently shown (already respects existing edits)
+    const cur = readOriginalFields(card);
+    const curDoor = (state.edits[editingSku]?.door) || detectDoor(editingSku);
+    document.getElementById('edit-sku').textContent = 'SKU: ' + editingSku + (curDoor ? ' · 当前门体: ' + curDoor : '');
+    document.getElementById('edit-name').value = cur.name;
+    document.getElementById('edit-price').value = cur.price ?? '';
+    document.getElementById('edit-liters').value = cur.liters ?? '';
+    document.getElementById('edit-series').value = cur.series;
+    document.getElementById('edit-door').value = curDoor || '';
+    document.getElementById('edit-feats').value = cur.features.join('\n');
+    editModal.classList.add('open');
+  }
+  document.getElementById('edit-cancel').addEventListener('click', () => {
+    editModal.classList.remove('open'); editingSku = null;
+  });
+  document.getElementById('edit-revert').addEventListener('click', () => {
+    if (!editingSku) return;
+    if (!confirm('还原此卡片为服务器原始数据(丢弃本地修改)?')) return;
+    const hadDoor = state.edits[editingSku]?.door;
+    delete state.edits[editingSku];
+    save();
+    // revert text fields on all copies of this card
+    document.querySelectorAll(`.card[data-sku="${CSS.escape(editingSku)}"]`).forEach(applyEditToCard);
+    // revert door move: remove clone, un-hide original
+    if (hadDoor) {
+      DOORS.forEach(d => {
+        const panel = document.getElementById('panel-' + d);
+        if (!panel) return;
+        panel.querySelectorAll(`.card[data-sku="${CSS.escape(editingSku)}"]`).forEach(c => {
+          if (c.dataset.movedClone) c.remove();
+          if (c.dataset.movedOut) { delete c.dataset.movedOut; c.style.display = ''; }
+        });
+      });
+    }
+    recountAll();
+    updateCount();
+    editModal.classList.remove('open'); editingSku = null;
+  });
+  document.getElementById('edit-ok').addEventListener('click', () => {
+    if (!editingSku) return;
+    const priceStr = document.getElementById('edit-price').value.trim();
+    const litersStr = document.getElementById('edit-liters').value.trim();
+    const featsStr = document.getElementById('edit-feats').value;
+    const doorVal = document.getElementById('edit-door').value;
+    const ed = {
+      name: document.getElementById('edit-name').value.trim(),
+      price: priceStr ? parseFloat(priceStr) : null,
+      liters: litersStr ? parseInt(litersStr) : null,
+      series: document.getElementById('edit-series').value.trim(),
+      door: doorVal || '',
+      features: featsStr.split('\n').map(x => x.trim()).filter(Boolean),
+    };
+    state.edits[editingSku] = ed;
+    save();
+    // Apply text-field edits to ALL cards with this SKU (panel-all + door-panel clone)
+    document.querySelectorAll(`.card[data-sku="${CSS.escape(editingSku)}"]`).forEach(applyEditToCard);
+    if (doorVal) moveCardToDoor(editingSku, doorVal);
+    recountAll();
+    updateCount();
+    editModal.classList.remove('open'); editingSku = null;
   });
 
   // Add modal
@@ -5189,6 +5847,7 @@
   // Init
   applyHidden();
   renderCustomCards();
+  applyEdits();
 </script>
 </body>
 </html>
