@@ -2,5 +2,6 @@ refresh.log
 refresh_run.log
 _data/
 index.local.html
+index.plain.html
 peek_*.py
 diag.py
