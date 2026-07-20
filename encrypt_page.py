@@ -151,6 +151,7 @@ def is_already_encrypted(html: str) -> bool:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-p", "--password", help="密码;不传则交互式输入")
+    ap.add_argument("--pw-file", help="从文件读密码(单行,首尾空白剥掉);用于定时任务,避免密码出现在命令行/日志")
     ap.add_argument("--force", action="store_true", help="即使 index.html 看起来已加密也继续(会用 index.plain.html 作为源)")
     args = ap.parse_args()
 
@@ -177,7 +178,13 @@ def main():
             PLAIN_BAK.write_text(src_html, encoding="utf-8")
             print(f"[INFO] 刷新明文备份 {PLAIN_BAK.name}")
 
-    pw = args.password or getpass.getpass("密码: ")
+    if args.pw_file:
+        pw_path = Path(args.pw_file)
+        if not pw_path.exists():
+            print(f"[ERR] --pw-file 指向的文件不存在: {pw_path}", file=sys.stderr); sys.exit(3)
+        pw = pw_path.read_text(encoding="utf-8").strip()
+    else:
+        pw = args.password or getpass.getpass("密码: ")
     if not pw:
         print("[ERR] 密码为空", file=sys.stderr); sys.exit(3)
 
