@@ -71,11 +71,17 @@ WRAPPER_TEMPLATE = r"""<!doctype html>
   const SKEY = "jd-fridge-map-pw-v1";
   const COUNTER_NS = "jd-fridge-map-dblows08";
   // Fire-and-forget beacon to counterapi.dev (3 keys: load / attempt / success)
+  // Retries up to 3 times with backoff — counterapi occasionally times out.
   function beacon(event){
-    try {
-      fetch("https://api.counterapi.dev/v1/" + COUNTER_NS + "/" + event + "/up",
-            {mode:"cors", cache:"no-store", keepalive:true});
-    } catch(e){}
+    const url = "https://api.counterapi.dev/v1/" + COUNTER_NS + "/" + event + "/up";
+    let attempts = 0;
+    function tryOnce(){
+      attempts++;
+      fetch(url, {mode:"cors", cache:"no-store", keepalive:true})
+        .then(r => { if (!r.ok && attempts < 3) setTimeout(tryOnce, 400 * attempts); })
+        .catch(() => { if (attempts < 3) setTimeout(tryOnce, 400 * attempts); });
+    }
+    try { tryOnce(); } catch(e){}
   }
 
   function b64d(s){
