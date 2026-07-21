@@ -95,7 +95,9 @@
   })();
 
   async function fetchOne(key) {
-    const url = 'https://api.counterapi.dev/v1/' + NS + '/' + key;
+    // NOTE: trailing slash is required — counterapi 301s the no-slash form,
+    // and browsers drop CORS headers after cross-origin redirect → Failed to fetch.
+    const url = 'https://api.counterapi.dev/v1/' + NS + '/' + key + '/';
     let lastErr;
     for (let i = 0; i < 3; i++) {
       try {
