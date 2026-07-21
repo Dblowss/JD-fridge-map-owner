@@ -138,6 +138,8 @@ WRAPPER_TEMPLATE = r"""<!doctype html>
       return true;
     } catch(e){
       if (btn) btn.disabled = false;
+      // 只有手动输入错才算 fail;自动重放静默失败(silent=true 通常代表 sessionStorage 里存的密码,理论上不会错)
+      if (!silent) beacon("fail");
       if (!silent && err) { err.textContent = "密码错误"; }
       if (inp) { inp.select(); }
       return false;
