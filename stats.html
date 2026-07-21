@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>Fridge Map · 访问统计</title>
+<style>
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; margin: 24px; background: #f5f6f8; color: #222; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: #888; font-size: 12px; margin-bottom: 20px; }
+  .cards { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+  .card { background: #fff; padding: 18px 24px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); min-width: 170px; }
+  .card h3 { margin: 0 0 6px; font-size: 13px; color: #666; font-weight: 600; }
+  .card .n { font-size: 30px; font-weight: 700; line-height: 1; }
+  .card .lbl { font-size: 11.5px; color: #999; margin-top: 6px; }
+  .card.load .n { color: #64748b; }
+  .card.attempt .n { color: #d97706; }
+  .card.success .n { color: #16a34a; }
+  .card.fail .n { color: #dc2626; }
+  .card.rate .n { color: #2563eb; font-size: 26px; }
+  .card .n.loading { color: #cbd5e1; }
+  h2 { font-size: 15px; margin: 20px 0 10px; }
+  .derived { background: #fff; padding: 14px 20px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .derived .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #eef1f5; }
+  .derived .row:last-child { border-bottom: 0; }
+  .derived .row .k { color: #666; font-size: 13px; }
+  .derived .row .v { font-weight: 600; font-size: 14px; color: #222; }
+  .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .toolbar button { padding: 6px 14px; font-size: 13px; border: 1px solid #cfd6de; background: #fff; color: #333; cursor: pointer; border-radius: 4px; }
+  .toolbar button:hover { background: #f0f4fa; }
+  .toolbar button:disabled { color: #aaa; cursor: not-allowed; }
+  .toolbar .updated { font-size: 12px; color: #888; }
+  .toolbar label { font-size: 12.5px; color: #666; display: flex; align-items: center; gap: 4px; }
+  .err { color: #c53030; font-size: 13px; margin-top: 10px; }
+</style>
+</head>
+<body>
+  <h1>Fridge Map · 访问统计</h1>
+  <div class="sub">counterapi.dev · jd-fridge-map-dblows08</div>
+
+  <div class="toolbar">
+    <button id="btn-refresh">↻ 刷新</button>
+    <label><input type="checkbox" id="auto"> 30 秒自动</label>
+    <span class="updated" id="updated"></span>
+    <span class="err" id="err"></span>
+  </div>
+
+  <div class="cards">
+    <div class="card load">
+      <h3>页面打开</h3>
+      <div class="n loading" id="load">—</div>
+      <div class="lbl">load  ·  密码墙加载次数</div>
+    </div>
+    <div class="card attempt">
+      <h3>密码尝试</h3>
+      <div class="n loading" id="attempt">—</div>
+      <div class="lbl">attempt  ·  手动点"进入"</div>
+    </div>
+    <div class="card success">
+      <h3>密码成功</h3>
+      <div class="n loading" id="success">—</div>
+      <div class="lbl">success  ·  解密进入内容页</div>
+    </div>
+    <div class="card fail">
+      <h3>密码错</h3>
+      <div class="n loading" id="fail">—</div>
+      <div class="lbl">= 尝试 − 成功</div>
+    </div>
+    <div class="card rate">
+      <h3>转化率</h3>
+      <div class="n loading" id="rate">—</div>
+      <div class="lbl">= 成功 / 打开</div>
+    </div>
+  </div>
+
+  <h2>推断指标</h2>
+  <div class="derived" id="derived">
+    <div class="row"><span class="k">打开但没试密码 (望而却步)</span><span class="v" id="d-visitors-no-attempt">—</span></div>
+    <div class="row"><span class="k">试密码后放弃 (试了但没进)</span><span class="v" id="d-attempt-no-success">—</span></div>
+    <div class="row"><span class="k">尝试率 (试过密码 / 页面打开)</span><span class="v" id="d-attempt-rate">—</span></div>
+    <div class="row"><span class="k">试密码后的成功率 (成功 / 尝试)</span><span class="v" id="d-attempt-success-rate">—</span></div>
+  </div>
+
+<script>
+  const NS = 'jd-fridge-map-dblows08';
+  const KEYS = ['load', 'attempt', 'success'];
+  const TOKEN = 'stats-mdbx-2026-view';
+
+  // Token gate — only render if ?token=... matches.
+  (function gate(){
+    const params = new URLSearchParams(location.search);
+    if (params.get('token') !== TOKEN) {
+      document.body.innerHTML = '<div style="font-family:sans-serif;margin:40px;color:#666;">Not authorized. Append <code>?token=&lt;correct-token&gt;</code> to the URL.</div>';
+      throw new Error('unauthorized');
+    }
+  })();
+
+  async function fetchOne(key) {
+    const url = 'https://api.counterapi.dev/v1/' + NS + '/' + key;
+    let lastErr;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const r = await fetch(url, { cache: 'no-store' });
+        if (!r.ok) throw new Error(key + ' HTTP ' + r.status);
+        const j = await r.json();
+        return j.count | 0;
+      } catch (e) {
+        lastErr = e;
+        // wait 400ms before retry
+        await new Promise(r => setTimeout(r, 400 * (i + 1)));
+      }
+    }
+    throw lastErr;
+  }
+
+  function fmt(n) { return (n == null || Number.isNaN(n)) ? '—' : n.toLocaleString('zh-CN'); }
+  function pct(num, den) {
+    if (!den) return '—';
+    return (100 * num / den).toFixed(1) + '%';
+  }
+
+  async function load() {
+    const errEl = document.getElementById('err');
+    errEl.textContent = '';
+    KEYS.forEach(k => document.getElementById(k).classList.add('loading'));
+    try {
+      const [pvL, pvA, pvS] = await Promise.all(KEYS.map(fetchOne));
+      document.getElementById('load').textContent = fmt(pvL);
+      document.getElementById('attempt').textContent = fmt(pvA);
+      document.getElementById('success').textContent = fmt(pvS);
+      document.getElementById('fail').textContent = fmt(pvA - pvS);
+      document.getElementById('rate').textContent = pct(pvS, pvL);
+      KEYS.forEach(k => document.getElementById(k).classList.remove('loading'));
+      document.getElementById('fail').classList.remove('loading');
+      document.getElementById('rate').classList.remove('loading');
+
+      document.getElementById('d-visitors-no-attempt').textContent = fmt(pvL - pvA);
+      document.getElementById('d-attempt-no-success').textContent = fmt(pvA - pvS);
+      document.getElementById('d-attempt-rate').textContent = pct(pvA, pvL);
+      document.getElementById('d-attempt-success-rate').textContent = pct(pvS, pvA);
+
+      const now = new Date();
+      document.getElementById('updated').textContent = '最后更新 ' + now.toLocaleTimeString('zh-CN');
+    } catch (e) {
+      errEl.textContent = '拉取失败: ' + e.message;
+    }
+  }
+
+  document.getElementById('btn-refresh').addEventListener('click', load);
+  let timer = null;
+  document.getElementById('auto').addEventListener('change', e => {
+    if (e.target.checked) {
+      timer = setInterval(load, 30000);
+    } else if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+  });
+
+  load();
+</script>
+</body>
+</html>
