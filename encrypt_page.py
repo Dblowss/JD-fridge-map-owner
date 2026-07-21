@@ -69,6 +69,14 @@ WRAPPER_TEMPLATE = r"""<!doctype html>
   const IV_B64 = "__IV_B64__";
   const ITERS = __ITERS__;
   const SKEY = "jd-fridge-map-pw-v1";
+  const COUNTER_NS = "jd-fridge-map-dblows08";
+  // Fire-and-forget beacon to counterapi.dev (3 keys: load / attempt / success)
+  function beacon(event){
+    try {
+      fetch("https://api.counterapi.dev/v1/" + COUNTER_NS + "/" + event + "/up",
+            {mode:"cors", cache:"no-store", keepalive:true});
+    } catch(e){}
+  }
 
   function b64d(s){
     const bin = atob(s);
@@ -112,11 +120,14 @@ WRAPPER_TEMPLATE = r"""<!doctype html>
     const btn = document.getElementById("go");
     const inp = document.getElementById("pw");
     if (btn) btn.disabled = true;
+    // 只把用户手动输入 (silent=false) 算作 attempt;自动重放缓存不计
+    if (!silent) beacon("attempt");
     try {
       const html = await tryDecrypt(pw);
       if (btn) btn.disabled = false;
       // 缓存输入的密码到 sessionStorage(明文,tab 关闭清空),下次刷新免输
       try { sessionStorage.setItem(SKEY + "-pw", pw); } catch(e){}
+      beacon("success");
       renderPage(html);
       return true;
     } catch(e){
@@ -129,6 +140,7 @@ WRAPPER_TEMPLATE = r"""<!doctype html>
 
   // 页面加载:如果 sessionStorage 里有上次输过的密码就自动试
   window.addEventListener("DOMContentLoaded", function(){
+    beacon("load");
     let cached = null;
     try { cached = sessionStorage.getItem(SKEY + "-pw"); } catch(e){}
     if (cached) { attempt(cached, true); }
